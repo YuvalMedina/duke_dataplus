@@ -5,7 +5,7 @@ import matplotlib.dates as pltdates
 import datetime as dt
 from main_functions import readFile, getData, plotGraph
 
-def daily_avg_diff(DataForm):
+def daily_avg_sqDiff(DataForm):
     #takes in a DataFrame containing all information for one siteID, returns dictionary of dataframes containing difference in averages between consecutive days
     DataForm['month'] = pd.DatetimeIndex(DataForm['dateTimeUTC']).month
     DataForm['day'] = pd.DatetimeIndex(DataForm['dateTimeUTC']).day
@@ -18,7 +18,8 @@ def daily_avg_diff(DataForm):
         values = values.drop(['month', 'day'], axis=1)
         diff_byDay = pd.DataFrame()
         diff_byDay = values.diff()
-        byVar[v] = diff_byDay
+        sq_diff_byDay = np.square(diff_byDay)
+        byVar[v] = sq_diff_byDay
     return byVar
 
 def filter_vals(x):
@@ -26,6 +27,7 @@ def filter_vals(x):
     filtered = mean_val
     return filtered
 
+def sum_sq_diff(diff_dict):
 
 
 
@@ -38,6 +40,8 @@ def getDataSite(DataForm, region, site):
 
 myfile = readFile();
 DataForm = getDataSite(myfile, 'AZ', 'LV')
+print(daily_avg_sqDiff(DataForm))
+
 DataForm['month'] = pd.DatetimeIndex(DataForm['dateTimeUTC']).month
 DataForm['day'] = pd.DatetimeIndex(DataForm['dateTimeUTC']).day
 variables = DataForm.variable.unique()
