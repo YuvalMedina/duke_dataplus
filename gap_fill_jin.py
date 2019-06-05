@@ -28,8 +28,13 @@ def filter_vals(x):
     return filtered
 
 def sum_sq_diff(diff_dict):
+    rows = daily[variables[0]].shape[0]
+    #get num rows
+    #loop through number of rows and add them across teh dictionaries
+    #each sum append to a new dataframe with dates(?)
+    return
 
-
+x.reindex_like(y).fillna(0) + y.fillna(0).fillna(0) # sum of x and y dataframes
 
 
 def getDataSite(DataForm, region, site):
