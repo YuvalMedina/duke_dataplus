@@ -1,3 +1,9 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.dates as pltdates
+import datetime as dt
+
 def readFile():
     myfile = pd.read_csv("flagged_sites.csv", sep=',', parse_dates=[2])
     myfile['dateTimeUTC'] = pd.to_datetime(myfile['dateTimeUTC'], format='%Y-%m-%d %H:%M:%S')
