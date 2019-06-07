@@ -4,28 +4,58 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as pltdates
 import datetime as dt
 from main_functions import readFile, getData, plotGraph
+from itertools import groupby
+
+def getDataSite(DataForm, region, site):
+    #import numpy as np
+    #import pandas as pd
+    regionFile = DataForm.loc[DataForm['regionID']==region]
+    return regionFile.loc[regionFile['siteID']==site]      #return dirty file (all flags are kept) for given region, site, and variable name
+
+index = pd.date_range('1/1/2000', periods=9, freq='T')
+series = pd.Series(range(9), index=index)
+series.resample('3T').sum()
+
+myfile = readFile();
+DataForm = getData(myfile, 'AZ', 'LV', 'WaterTemp_C')
+plotGraph(DataForm)
+DataForm.head()
+
+DataForm.asfreq('15M')
+all_gaps = DataForm[pd.isnull(DataForm["value"])]
+all_gaps.head()
+
+dates = all_gaps.dateTimeUTC.toList()
+dates_diff = [dates[i + 1] - dates[i] for i in range(len(dates)-1)]
+gap_info = [(sum(1 for _ in gp), x) for x, gp in groupby(dates_diff)]
+
+
+
+
 
 def find_gap(DataForm):
     #takes in DataFrame with gaps for one region and siteID
     #returns dictionary with variables as keys containing start and end dates of gaps
         #if only one day of missing value, start and end date are the same
-    variables = DataForm.variable.unique()
-    gap_var = {}
+    all_gaps = DataForm[pd.isnull(DataForm["value"])]
+    variables = all_gaps.variable.unique()      #gets all variables with gaps
     for v in variables:
         i=0
-        values = DataForm.loc[DataForm['variable']==v]
-        while(!values['value'].iloc[i].isnull()):
-            i++
-        start_date = values['dateTimeUTC'].iloc[i]
-        i++
+        values = all_gaps.loc[all_gaps['variable']==v]      #gets new DataFrame with only info on missing values
+        dates = values['dateTimeUTC'].toList()
+        dates_diff = [dates[i + 1] - dates[i] for i in range(len(dates)-1)]
+        gap_info = [(sum(1 for _ in gp), x) for x, gp in groupby(dates_diff)]
+        start_date = values['dateTimeUTC'].iloc[0]
+        i+=1
         if(values['value'].iloc[i].isnull()):
             while(values['value'].iloc[i].isnull()):
-                i++
+                i+=1
             end_date = values['dateTimeUTC'].iloc[i]
         else:
             gap_var[v] = [start_date, start_date]
         gap_var[v] = [start_data, end_date]
     return gap_var
+
 
 
 def daily_stand_avg(DataForm, start_date, end_date):
@@ -75,7 +105,7 @@ def getDataSite(DataForm, region, site):
     regionFile = DataForm.loc[DataForm['regionID']==region]
     return regionFile.loc[regionFile['siteID']==site]      #return dirty file (all flags are kept) for given region, site, and variable name
 
-myfile = readFile();
+
 DataForm = getDataSite(myfile, 'AZ', 'LV')
 print(daily_stand_avg(DataForm))
 
