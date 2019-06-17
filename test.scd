@@ -1,8 +1,36 @@
+var path, wavname, regionID, siteID, variable, line, list;
+
+s.boot;
+
+path = thisProcess.nowExecutingPath.dirname;
+("File exists?:" + File.exists(path +/+ "flagged_sites.csv")).postln;
+
+f = File(path +/+ "flagged_sites.csv", "r"); c = CSVFileReader(f); c.next.postln; c.next.postln;
+
+regionID = "NC";
+siteID = "Eno";
+variable = "DOmgL";
+
+//wavname = regionID ++ "_" ++ siteID ++ "_" ++ variable ++ ".wav";
+//(path +/+ wavname).postln;
+//w = SoundFile.openWrite(path +/+ wavname, "WAV", "float");
+
+//b = Buffer.alloc(s, 44100, 1);
+
+"got here1".postln;
+
 (
-{ SinOsc.ar( [[200, 200*2, 200*3, 200*4, 200*5, 200*6],
-              [200, 200*2, 200*3, 200*4, 200*5, 200*6]],
-             0,
-             0.2 ); }.play;
+line = c.next;
+list = List.new;
+while({line = c.next; line != nil}, if(line.at(0).compare(regionID) == 0 && line.at(1).compare(siteID) == 0 && line.at(3).compare(variable) == 0, {list.add(line.at(4).asFloat); line.at(4).asFloat.postln;} ));
+
+"got here2".postln;
+
+//w.writeData(list);
+
+"got here3".postln;
+
+//w.cue(b, true, true);
 )
 
 (
@@ -19,19 +47,19 @@
    // left channel
    var left = [ SinOsc.ar( freq:frequencyL, mul:volumeL ), // this is the oscillating part
                 SinOsc.ar( freq:[frequencyL_drone,2*frequencyL_drone], mul:0.02 ), // the rest make up the drone
-                SinOsc.ar( freq:[5*frequencyL_drone,7*frequencyL_drone], mul:0.005 ),
-                SinOsc.ar( freq:[13*frequencyL_drone,28*frequencyL_drone], mul:0.001 ) ];
+                SinOsc.ar( freq:[3*frequencyL_drone,4*frequencyL_drone], mul:0.005 ),
+                SinOsc.ar( freq:[5*frequencyL_drone,6*frequencyL_drone], mul:0.001 ) ];
 
    // right channel
    var right = [ SinOsc.ar( freq:frequencyR, mul:0.1 ), // this is the oscillating part
                  SinOsc.ar( freq:[frequencyR_drone,2*frequencyR_drone], mul:0.02 ), // the rest make up the drone
                  SinOsc.ar( freq:4*frequencyR_drone, mul:0.005 ),
-                 SinOsc.ar( freq:[64*frequencyR_drone,128*frequencyR_drone], mul:0.01 ) ]; // high frequencies!
+                 SinOsc.ar( freq:[7*frequencyR_drone,8*frequencyR_drone], mul:0.01 ) ]; // high frequencies!
 
    [ left, right ];
 }.play
+
+
 )
 
-(
-{
-	var 
+File.delete(path + wavname);
