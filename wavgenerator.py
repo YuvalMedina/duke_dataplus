@@ -12,6 +12,9 @@ currentfile = readFile("csv_files/AZ_LV_DO_mgL.csv")
 clean = currentfile.loc[currentfile['flagID']!="Bad Data"]
 
 clean.head(10)
+clean.dtypes
 
-plt.plot_date(clean['dateTimeUTC'], clean['value'])
+clean = clean.drop_duplicates(subset=['dateTimeUTC'], keep='first')
+
+plt.plot(clean['dateTimeUTC'], clean['value'])
 plt.show()
