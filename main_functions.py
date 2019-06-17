@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as pltdates
 import datetime as dt
 
-def readFile():
-    myfile = pd.read_csv("flagged_sites.csv", sep=',', parse_dates=[2])
+def readFile(name):
+    myfile = pd.read_csv(name, sep=',', parse_dates=[2])
     myfile['dateTimeUTC'] = pd.to_datetime(myfile['dateTimeUTC'], format='%Y-%m-%d %H:%M:%S')
     return myfile
 
@@ -37,8 +37,8 @@ def plotGraph(DataForm, region="", site="", variable=""):
         file = file.loc[file['variable']==variable]
     fig1, ax1 = plt.subplots();
     ax1.plot_date(file.dateTimeUTC, file.value)
-    region_name = file.loc[:, 'regionID']
-    site_name = file.loc[:,'siteID']
-    variable_name = file.loc[:,'variable']
-    ax1.set_title(region_name.iloc[0] + ', ' + site_name.iloc[0] + ', ' + variable_name.iloc[0])
+    ax1.set_title(file.iloc[1][0] + ', ' + file.iloc[1][1] + ', ' + file.iloc[1][3])
     return
+
+myfile = readFile("flagged_sites.csv")
+plotGraph(myfile, region="NC", site="Eno", variable="WaterPres_kPa")
