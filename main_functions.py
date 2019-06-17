@@ -36,9 +36,10 @@ def plotGraph(DataForm, region="", site="", variable=""):
     if variable:
         file = file.loc[file['variable']==variable]
     fig1, ax1 = plt.subplots();
-    ax1.plot_date(file.dateTimeUTC, file.value)
-    ax1.set_title(file.iloc[1][0] + ', ' + file.iloc[1][1] + ', ' + file.iloc[1][3])
+    ax1.plot_date(file['dateTimeUTC'], file['value'])
+    if((region != '') & (site != '') & (variable != '')):
+        ax1.set_title(file.iloc[1][0] + ', ' + file.iloc[1][1] + ', ' + file.iloc[1][3])
     return
 
-myfile = readFile("flagged_sites.csv")
-plotGraph(myfile, region="NC", site="Eno", variable="WaterPres_kPa")
+#myfile = readFile("flagged_sites.csv")
+#plotGraph(myfile, region="NC", site="Eno", variable="WaterPres_kPa")
