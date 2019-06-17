@@ -10,7 +10,7 @@ import math
 
 from main_functions import readFile, getData, plotGraph
 
-myfile = readFile()
+myfile = readFile("flagged_sites.csv")
 
 #given a data form, and a start and end dates as well as 'gapvariable', the variable whose data is missing in those dates
 #fill the gap!
@@ -62,8 +62,10 @@ def gapFill(DataForm, start_date, end_date, gapvariable):
     DataForm.append(fill_with, ignore_index=True)
     return DataForm
 
-riverdata = getData(myfile, region='AZ', site='LV')
+riverdata = getData(myfile, region='AZ', site='LV', variable='WaterTemp_C')
 plotGraph(riverdata, variable='WaterTemp_C')
+riverdata.to_csv("AZ_LV_WaterTemp_C_data.csv")
+
 
 filled = gapFill(riverdata, dt.datetime(2018,6,7,15,0),dt.datetime(2018,7,11,19,45),'WaterTemp_C')
 plotGraph(filled, 'WaterTemp_C')
