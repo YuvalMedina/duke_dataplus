@@ -21,9 +21,16 @@ DataForm = getData(myfile, 'AZ', 'LV', 'WaterTemp_C')
 plotGraph(DataForm)
 DataForm.head()
 
-DataForm.asfreq('15M')
+DataForm['dateTimeUTC'].asfreq('M')
 all_gaps = DataForm[pd.isnull(DataForm["value"])]
 all_gaps.head()
+
+DataForm['dateTimeUTC'].iloc[0]
+
+idx = pd.date_range(DataForm['dateTimeUTC'].iloc[0], DataForm['dateTimeUTC'].iloc[-1], freq = '15M')
+print(idx)
+DataForm.index = DataForm.dateTimeUTC
+DataForm.reindex(idx)
 
 dates = all_gaps.dateTimeUTC.toList()
 dates_diff = [dates[i + 1] - dates[i] for i in range(len(dates)-1)]
