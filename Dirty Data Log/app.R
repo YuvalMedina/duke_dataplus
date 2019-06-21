@@ -1,4 +1,5 @@
 library(shiny)
+source("gap_detect.R")
 
 bigDataSet <- read.csv("NC_NHC_DO_mgL.csv")
 
@@ -36,9 +37,12 @@ ui <- fluidPage(
               sidebarLayout(
                 sidebarPanel(
                   selectInput(inputId = "dirtyVar",
-                            label = "Select a variable:",
-                            choices = c("rock", "pressure", "cars")
-                  )
+                            label = "Select a file",
+                            choices = list.files(pattern='.csv')
+                  ),
+                  sliderInput(inputId = "time_int",
+                              label = "Select time interval of data collection (minutes)",
+                              min = 0, max = 60, value = 30, step = 5)
                 ),
                 mainPanel(
                   h1("Examples")
@@ -51,9 +55,13 @@ ui <- fluidPage(
 
 server <- function(input, output) {
   clean_type <- reactive({(input$cleanVar)})
+  dirty_file <- reactive({(input$dirtyVar)})
+  time_gap <- reactive({(input$time_int)})
+  
   output$selected_clean <- renderText({ 
     paste("Below is an oxygen curve considered to be clean and complete for the time period of a", tolower(clean_type()), ":")
   })
+  
   output$plot_time <- renderPlot({
     if(clean_type() == "Day"){
       clean <- read.csv("Day.csv")
@@ -80,6 +88,20 @@ server <- function(input, output) {
          main = graph_type, 
          xlab ="Time Stamp", 
          ylab ="DO_mgL")
+  })
+  
+  output$plot_time <- renderPlot({
+    gaps = gap.finding(dirty_file(), time_gap())
+    head(gaps)
+    my_dirty_dat <- read.csv((dirty_file()))
+    my_dirty_df <- data.frame(
+      date = my_dirty_dat$dateTimeUTC,
+      value = my_dirty_dat$value
+    )
+    for (i in range(gaps.length())){
+      graph_dat <- my_dirty_df[gaps[i]-100:gaps[i]+100]
+      plot(graph_dat$date, graph_dat$value)
+    }
   })
   
 }
