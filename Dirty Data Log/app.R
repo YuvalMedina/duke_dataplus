@@ -1,22 +1,46 @@
 library(shiny)
+library("lubridate")
+library("ggplot2")
 source("gap_detect.R")
+
 
 bigDataSet <- read.csv("NC_NHC_DO_mgL.csv")
 
 ui <- fluidPage(
  navbarPage(title = "Guide to Dirty Data",
-            tabPanel("Metabolism", 
-              h1("Metabolism"),
-              br(),
-              p("Stream metabolism can be thought of as the exchange of energy in the forms of oxygen and carbon. 
-                This exchange occurs within the stream scosystem between autotrophs and heterotrophs in addition to with the external ecosystem."),
-              HTML('<center><img src="O and CO2 Exchange.jpg", width = 500, height = 300></center>'),
-              br(),
-              p("In 1956, Odum and his team developed a model that estimates metabolism as a function of oxygen concentration:"),
-              withMathJax(
-                helpText('$$\\frac{dO}{dt}=\\mathrm{GPP+ER}+K*\\mathrm{O}_\\mathrm{def}$$')
-              ), 
-              p("Odum Metabolism Model", align="center")
+              tabPanel("Metabolism", 
+                       fluidRow(
+                         column(8, offset=2,
+                                h1("Metabolism"),
+                                br(),
+                                h3("What is Metabolism"),
+                                "Stream metabolism is the measure of energy exchanged within the 
+                                stream ecosystem in the forms of oxygen and carbon. The two primary modes
+                                of exchange are primary production by autotrophs in which oxygen is produced and
+                                carbon is consumed, and respiration by heterotrophs in which oxygen is consumed
+                                carbon is produced. As research in stream metabolism modeling expands, we can gain
+                                a deeper understanding in how different external disturbances and environments
+                                can affect the productivity of the stream ecosystem.",
+                                br(),
+                                br(),
+                                br(),
+                                HTML('<center><img src="O and CO2 Exchange.jpg", width = 500, height = 300></center>'),
+                                br(),
+                                h3("Modeling Metabolism"),
+                                "In 1956, Odum and his team developed a model that estimates metabolism as a function of oxygen concentration:",
+                                withMathJax(
+                                  helpText('$$\\frac{dO}{dt}=\\mathrm{GPP+ER}+K*\\mathrm{O}_\\mathrm{def}$$')
+                                ), 
+                                "This model uses the change in oxygen over every time interval to calculate the 
+                                oxygen produced through primary production and consumed through respiration to calculate
+                                the average metabolism for each day. Therefore, to accurately model metabolism, the 
+                                oxygen curve must be a complete data set with few gaps. There must also be a high variance
+                                in oxygen concentration such as in the oxygen curve below showing data for one day.",
+                                HTML('<center><img src="DO curve.png", width = 400, height = 400></center>')
+                                
+                            )
+                                
+                       )
             ),
             tabPanel("Clean Data", 
                sidebarLayout(
@@ -36,16 +60,32 @@ ui <- fluidPage(
             tabPanel("Dirty Data", 
               sidebarLayout(
                 sidebarPanel(
-                  selectInput(inputId = "dirtyVar",
-                            label = "Select a file",
-                            choices = list.files(pattern='.csv')
-                  ),
-                  sliderInput(inputId = "time_int",
-                              label = "Select time interval of data collection (minutes)",
-                              min = 0, max = 60, value = 30, step = 5)
+                 # selectInput(inputId = "dirtyVar",
+                  #          label = "Select a file",
+                   #         choices = list.files(pattern='.csv')
+                #  ),
+                 # sliderInput(inputId = "time_int",
+                  #            label = "Select time interval of data collection (minutes)",
+                   #           min = 0, max = 60, value = 30, step = 5),
+                  selectInput(inputId = "dirtyType",
+                              label = "Select a type of dirty data",
+                              choices = c("Storm", "Outliers", "Gaps"))
+                  
+                  #plotOutput("plot_time")
                 ),
                 mainPanel(
-                  h1("Examples")
+                  h1("Examples and Explanations of Dirty Data"),
+                  br(),
+                  textOutput("dirty_type"),
+                  tags$head(tags$style("#dirty_type{color: black;
+                                 font-size: 24px;
+                                 font-style: bold;
+                                 }")
+                  ),
+                  br(),
+                  uiOutput("dirty_img"),
+                  textOutput("dirty_text"),
+                  plotOutput("dirty_plot")
                 )
               )
             )
@@ -57,6 +97,7 @@ server <- function(input, output) {
   clean_type <- reactive({(input$cleanVar)})
   dirty_file <- reactive({(input$dirtyVar)})
   time_gap <- reactive({(input$time_int)})
+  dirty_choice <- reactive({(input$dirtyType)})
   
   output$selected_clean <- renderText({ 
     paste("Below is an oxygen curve considered to be clean and complete for the time period of a", tolower(clean_type()), ":")
@@ -90,20 +131,61 @@ server <- function(input, output) {
          ylab ="DO_mgL")
   })
   
-  output$plot_time <- renderPlot({
-    gaps = gap.finding(dirty_file(), time_gap())
-    head(gaps)
-    my_dirty_dat <- read.csv((dirty_file()))
-    my_dirty_df <- data.frame(
-      date = my_dirty_dat$dateTimeUTC,
-      value = my_dirty_dat$value
-    )
-    for (i in range(gaps.length())){
-      graph_dat <- my_dirty_df[gaps[i]-100:gaps[i]+100]
-      plot(graph_dat$date, graph_dat$value)
+ # output$plot_time <- renderPlot({
+ #   gaps = gap.finding(dirty_file(), time_gap())
+#    head(gaps)
+ #   my_dirty_dat <- read.csv((dirty_file()))
+  #  my_dirty_df <- data.frame(
+   #   date = my_dirty_dat$dateTimeUTC,
+    #  value = my_dirty_dat$value
+    #)
+  #  for (i in range(gaps.length())){
+   #   graph_dat <- my_dirty_df[gaps[i]-100:gaps[i]+100]
+    #  plot(graph_dat$date, graph_dat$value)
+  #  }
+#  })
+  
+  output$dirty_type <- renderText({
+    paste(dirty_choice(), "Data")
+  })
+  
+  output$dirty_plot <- renderPlot({
+    if(dirty_choice()=='Storm'){
+      storm_DO <- read.csv("storm_DO.csv")
+      storm_disch <- read.csv("storm_discharge.csv")
+      df_DO <- data.frame(
+        date = storm_DO$dateTimeUTC,
+        values = storm_DO$value
+      )
+      df_disch <- data.frame(
+        date = as.POSIXct(storm_disch$dateTimeUTC, tz='', 
+                          format = "%Y-%m-%d %H:%M:%S"),
+        values = storm_disch$value
+      )
+      ggplot() +
+        geom_point(df_disch, mapping=aes(x=date, y=values))+
+        geom_rect(data = data.frame(xmin = as.POSIXct(c("2017-03-02 00:00:00")),
+                                    xmax = as.POSIXct(c("2017-03-03 00:00:00")),
+                                    ymin = 0,
+                                    ymax = 6),
+                  aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
+                  fill = "red", alpha = 0.2)
     }
   })
   
+  output$dirty_img<-renderUI({
+    if(dirty_choice()=='Storm'){
+      img(src='Storm.png', height = '300px', align = 'center')
+    }
+      
+  })
+  
+  output$dirty_text<-renderText({
+    if(dirty_choice() == 'Storm'){
+      paste("Storms can be identified with peaks in discharge plots as shown on May 2 with yellow points. When looking at the ")
+    }
+      
+  })
 }
 
 shinyApp(ui = ui, server = server)
