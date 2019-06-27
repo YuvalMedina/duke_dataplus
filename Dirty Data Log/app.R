@@ -43,19 +43,30 @@ ui <- fluidPage(
                        )
             ),
             tabPanel("Clean Data", 
-               sidebarLayout(
-                 sidebarPanel(
-                   selectInput(inputId = "cleanVar",
-                               label = "Select time interval:",
-                               choices = c("Day", "Week", "Month", "Year")
-                   )
-                 ),
-                 mainPanel(
-                   h1("Examples"),
-                   textOutput("selected_clean"),
-                   plotOutput("plot_time")
-                 )
-               )      
+                     fluidRow(
+                       column(10, offset=0,
+                              sidebarLayout(
+                                sidebarPanel(
+                                  h3("Clean Data"),
+                                  "Here are some time series plots over varying time intervals
+                                  that portray clean and complete oxygen curves ideal for
+                                  accurately modeling stream metabolism.",
+                                  br(),
+                                  br(),
+                                  selectInput(inputId = "cleanVar",
+                                              label = "Select time interval:",
+                                              choices = c("Day", "Week", "Month", "Year")
+                                  )
+                                ),
+                                mainPanel(
+                                  h1("Ideal Data for Modeling Metabolism"),
+                                  textOutput("selected_clean"),
+                                  plotOutput("plot_time")
+                                )
+                              )
+                          )
+                     )
+                     
             ),
             tabPanel("Dirty Data", 
               sidebarLayout(
@@ -85,7 +96,9 @@ ui <- fluidPage(
                   br(),
                   uiOutput("dirty_img"),
                   textOutput("dirty_text"),
-                  plotOutput("dirty_plot")
+                  plotOutput("dirty_disch_plot"),
+                  plotOutput("dirty_DO_plot")
+                  
                 )
               )
             )
@@ -149,36 +162,49 @@ server <- function(input, output) {
     paste(dirty_choice(), "Data")
   })
   
-  output$dirty_plot <- renderPlot({
-    if(dirty_choice()=='Storm'){
-      storm_DO <- read.csv("storm_DO.csv")
-      storm_disch <- read.csv("storm_discharge.csv")
-      df_DO <- data.frame(
-        date = storm_DO$dateTimeUTC,
-        values = storm_DO$value
-      )
-      df_disch <- data.frame(
-        date = as.POSIXct(storm_disch$dateTimeUTC, tz='', 
-                          format = "%Y-%m-%d %H:%M:%S"),
-        values = storm_disch$value
-      )
-      ggplot() +
-        geom_point(df_disch, mapping=aes(x=date, y=values))+
-        geom_rect(data = data.frame(xmin = as.POSIXct(c("2017-03-02 00:00:00")),
-                                    xmax = as.POSIXct(c("2017-03-03 00:00:00")),
-                                    ymin = 0,
-                                    ymax = 6),
-                  aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
-                  fill = "red", alpha = 0.2)
-    }
+  output$dirty_DO_plot <- renderPlot({
+    choice <- dirty_choice()
+    DO <- read.csv(paste0(choice, "_DO.csv"))
+    
+    df_DO <- data.frame(
+      date = as.POSIXct(DO$dateTimeUTC, tz='', 
+                        format = "%Y-%m-%d %H:%M:%S"),
+      values = DO$value
+    )
+    ggplot() +
+      geom_point(df_DO, mapping=aes(x=date, y=values))+
+      geom_rect(data = data.frame(xmin = as.POSIXct(c("2017-03-02 00:00:00")),
+                                  xmax = as.POSIXct(c("2017-03-03 00:00:00")),
+                                  ymin = 7.5,
+                                  ymax = 12.5),
+                aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
+                fill = "red", alpha = 0.2) 
   })
   
-  output$dirty_img<-renderUI({
-    if(dirty_choice()=='Storm'){
-      img(src='Storm.png', height = '300px', align = 'center')
-    }
-      
+  output$dirty_disch_plot <- renderPlot({
+    disch <- read.csv(paste0(dirty_choice(), "_discharge.csv"))
+    df_disch <- data.frame(
+      date = as.POSIXct(disch$dateTimeUTC, tz='', 
+                        format = "%Y-%m-%d %H:%M:%S"),
+      values = disch$value
+    )
+    ggplot() +
+      geom_point(df_disch, mapping=aes(x=date, y=values))+
+      geom_rect(data = data.frame(xmin = as.POSIXct(c("2017-03-02 00:00:00")),
+                                  xmax = as.POSIXct(c("2017-03-03 00:00:00")),
+                                  ymin = 0,
+                                  ymax = 6),
+                aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
+                fill = "red", alpha = 0.2) 
+    
   })
+  
+  #output$dirty_img<-renderUI({
+  #  if(dirty_choice()=='Storm'){
+  #    img(src='Storm.png', height = '300px', align = 'center')
+  #  }
+  #    
+#  })
   
   output$dirty_text<-renderText({
     if(dirty_choice() == 'Storm'){
