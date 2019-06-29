@@ -76,4 +76,15 @@ ggplot() +
                               ymax = 6),
             aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
             fill = "red", alpha = 0.2) 
+
+
+gaps_DO <- read.csv("gaps_DO.csv")
+storm_disch <- read.csv("storm_discharge.csv")
+head(storm_DO)
+head(storm_disch)
+
+df_DO <- data.frame(
+  date = storm_DO$dateTimeUTC,
+  values = storm_DO$value
+)
   

@@ -4,7 +4,24 @@ library("ggplot2")
 source("gap_detect.R")
 
 
-bigDataSet <- read.csv("NC_NHC_DO_mgL.csv")
+
+dirty_dates <- vector(mode = "list", length = 3)
+names(dirty_dates) <- c("Storm", "Outliers", "Gaps")
+dirty_dates[[1]] <- c("2017-03-02 00:00:00", "2017-03-03 00:00:00")
+dirty_dates[[2]] <- c("2017-03-02 00:00:00", "2017-03-03 00:00:00")
+dirty_dates[[3]] <- c("2017-06-21 15:00:00", "2017-06-27 21:00:00")
+
+dirty_DO_range <- vector(mode = "list", length = 3)
+names(dirty_DO_range) <- c("Storm", "Outliers", "Gaps")
+dirty_DO_range[[1]] <- c(7.5, 12.5)
+dirty_DO_range[[2]] <- c(7.5, 12.5)
+dirty_DO_range[[3]] <- c(6, 9)
+
+dirty_disch_range <- vector(mode = "list", length = 3)
+names(dirty_disch_range) <- c("Storm", "Outliers", "Gaps")
+dirty_disch_range[[1]] <- c(0, 6)
+dirty_disch_range[[2]] <- c(0,6)
+dirty_disch_range[[3]] <- c(0,6)
 
 ui <- fluidPage(
  navbarPage(title = "Guide to Dirty Data",
@@ -97,6 +114,7 @@ ui <- fluidPage(
                   uiOutput("dirty_img"),
                   textOutput("dirty_text"),
                   plotOutput("dirty_disch_plot"),
+                  textOutput("dirty_info"),
                   plotOutput("dirty_DO_plot")
                   
                 )
@@ -171,18 +189,31 @@ server <- function(input, output) {
                         format = "%Y-%m-%d %H:%M:%S"),
       values = DO$value
     )
+    print(dirty_dates$choice[1])
+    print(class(dirty_dates$choice[1]))
+    message(dirty_dates$choice[1])
     ggplot() +
       geom_point(df_DO, mapping=aes(x=date, y=values))+
-      geom_rect(data = data.frame(xmin = as.POSIXct(c("2017-03-02 00:00:00")),
-                                  xmax = as.POSIXct(c("2017-03-03 00:00:00")),
-                                  ymin = 7.5,
-                                  ymax = 12.5),
+      geom_rect(data = data.frame(xmin = as.POSIXct(c(dirty_dates[[choice]][1])),
+                                  xmax = as.POSIXct(c(dirty_dates[[choice]][2])),
+                                  ymin = dirty_DO_range[[choice]][1],
+                                  ymax = dirty_DO_range[[choice]][2]),
                 aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
                 fill = "red", alpha = 0.2) 
   })
   
+  output$dirty_info <- renderText({
+    
+    
+    
+    
+    
+    
+  })
+  
   output$dirty_disch_plot <- renderPlot({
-    disch <- read.csv(paste0(dirty_choice(), "_discharge.csv"))
+    choice <- dirty_choice()
+    disch <- read.csv(paste0(choice, "_discharge.csv"))
     df_disch <- data.frame(
       date = as.POSIXct(disch$dateTimeUTC, tz='', 
                         format = "%Y-%m-%d %H:%M:%S"),
@@ -190,10 +221,10 @@ server <- function(input, output) {
     )
     ggplot() +
       geom_point(df_disch, mapping=aes(x=date, y=values))+
-      geom_rect(data = data.frame(xmin = as.POSIXct(c("2017-03-02 00:00:00")),
-                                  xmax = as.POSIXct(c("2017-03-03 00:00:00")),
-                                  ymin = 0,
-                                  ymax = 6),
+      geom_rect(data = data.frame(xmin = as.POSIXct(c(dirty_dates[[choice]][1])),
+                                  xmax = as.POSIXct(c(dirty_dates[[choice]][2])),
+                                  ymin = dirty_disch_range[[choice]][1],
+                                  ymax = dirty_disch_range[[choice]][2]),
                 aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
                 fill = "red", alpha = 0.2) 
     
