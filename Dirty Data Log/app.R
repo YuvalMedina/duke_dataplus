@@ -1,27 +1,36 @@
 library(shiny)
+library(shinydashboard)
+dashboardPage(
+  dashboardHeader(disable = T),
+  dashboardSidebar(disable = T),
+  dashboardBody()
+)
+
 library("lubridate")
 library("ggplot2")
 source("gap_detect.R")
 
 
-
-dirty_dates <- vector(mode = "list", length = 3)
-names(dirty_dates) <- c("Storm", "Outliers", "Gaps")
+dirty_dates <- vector(mode = "list", length = 4)
+names(dirty_dates) <- c("Storm", "Outliers", "Gaps", "Sensor Error")
 dirty_dates[[1]] <- c("2017-03-02 00:00:00", "2017-03-03 00:00:00")
 dirty_dates[[2]] <- c("2017-03-02 00:00:00", "2017-03-03 00:00:00")
 dirty_dates[[3]] <- c("2017-06-21 15:00:00", "2017-06-27 21:00:00")
+dirty_dates[[4]] <- c("2017-04-18 05:30:00", "2017-04-24 18:00:00")
 
-dirty_DO_range <- vector(mode = "list", length = 3)
-names(dirty_DO_range) <- c("Storm", "Outliers", "Gaps")
+dirty_DO_range <- vector(mode = "list", length = 4)
+names(dirty_DO_range) <- c("Storm", "Outliers", "Gaps", "Sensor Error")
 dirty_DO_range[[1]] <- c(7.5, 12.5)
 dirty_DO_range[[2]] <- c(7.5, 12.5)
 dirty_DO_range[[3]] <- c(6, 9)
+dirty_DO_range[[4]] <- c(1, 10)
 
-dirty_disch_range <- vector(mode = "list", length = 3)
-names(dirty_disch_range) <- c("Storm", "Outliers", "Gaps")
+dirty_disch_range <- vector(mode = "list", length = 4)
+names(dirty_disch_range) <- c("Storm", "Outliers", "Gaps", "Sensor Error")
 dirty_disch_range[[1]] <- c(0, 6)
 dirty_disch_range[[2]] <- c(0,6)
 dirty_disch_range[[3]] <- c(0,6)
+dirty_disch_range[[4]] <- c(0,140)
 
 ui <- fluidPage(
  navbarPage(title = "Guide to Dirty Data",
@@ -53,7 +62,34 @@ ui <- fluidPage(
                                 the average metabolism for each day. Therefore, to accurately model metabolism, the 
                                 oxygen curve must be a complete data set with few gaps. There must also be a high variance
                                 in oxygen concentration such as in the oxygen curve below showing data for one day.",
-                                HTML('<center><img src="DO curve.png", width = 400, height = 400></center>')
+                                HTML('<center><img src="DO curve.png", width = 400, height = 400></center>'),
+                                tabBox(width=12,id="tabBox_next_previous",
+                                       tabPanel("Tab1",p("This is tab 1")),
+                                       tabPanel("Tab2",p("This is tab 2")),
+                                       tabPanel("Tab3",p("This is tab 3")),
+                                       tabPanel("Tab4",p("This is tab 4")),
+                                       tags$script("
+                                          $('body').mouseover(function() {
+                                          list_tabs=[];
+                                          $('#tabBox_next_previous li a').each(function(){
+                                          list_tabs.push($(this).html())
+                                          });
+                                          Shiny.onInputChange('List_of_tab', list_tabs);})
+                                          "
+                                       )
+                                ),
+                                uiOutput("Next_Previous"),
+                                
+                                  #tabPanel("Instructions",
+                                 #     
+                                    
+                                  #tabPanel("Raw Data: Oxygen Curve"),
+                                 # tabPanel("Next Step"),
+                                 # tabPanel("Final Step")
+                                #),
+                                br(),
+                                br(),
+                                br()
                                 
                             )
                                 
@@ -86,39 +122,43 @@ ui <- fluidPage(
                      
             ),
             tabPanel("Dirty Data", 
-              sidebarLayout(
-                sidebarPanel(
-                 # selectInput(inputId = "dirtyVar",
-                  #          label = "Select a file",
-                   #         choices = list.files(pattern='.csv')
-                #  ),
-                 # sliderInput(inputId = "time_int",
-                  #            label = "Select time interval of data collection (minutes)",
-                   #           min = 0, max = 60, value = 30, step = 5),
-                  selectInput(inputId = "dirtyType",
-                              label = "Select a type of dirty data",
-                              choices = c("Storm", "Outliers", "Gaps"))
-                  
-                  #plotOutput("plot_time")
-                ),
-                mainPanel(
-                  h1("Examples and Explanations of Dirty Data"),
-                  br(),
-                  textOutput("dirty_type"),
-                  tags$head(tags$style("#dirty_type{color: black;
-                                 font-size: 24px;
-                                 font-style: bold;
-                                 }")
-                  ),
-                  br(),
-                  uiOutput("dirty_img"),
-                  textOutput("dirty_text"),
-                  plotOutput("dirty_disch_plot"),
-                  textOutput("dirty_info"),
-                  plotOutput("dirty_DO_plot")
-                  
-                )
-              )
+                     fluidRow(
+                       column(10, offset=0,
+                              sidebarLayout(
+                                sidebarPanel(
+                                  h3("Dirty Data"),
+                                  'Here are visualization of some common types of dirty data within
+                                  oxygen curves and the corresponding discharge data seen by stream 
+                                  metabolism researchers. Within each time series, the data highlighted in red
+                                  is considered there the data has gone "bad".',
+                                  br(),
+                                  br(),
+                                  selectInput(inputId = "dirtyType",
+                                              label = "Select a type of dirty data",
+                                              choices = c("Storm", "Outliers", "Gaps", "Sensor Error"))
+                
+                                ),
+                                mainPanel(
+                                  h1("Examples and Explanations of Dirty Data"),
+                                  br(),
+                                  textOutput("dirty_type"),
+                                  tags$head(tags$style("#dirty_type{color: black;
+                                     font-size: 24px;
+                                     font-style: bold;
+                                     }")),
+                                  br(),
+                                  textOutput("dirty_text"),
+                                  br(),
+                                  plotOutput("dirty_DO_plot"),
+                                  plotOutput("dirty_disch_plot")
+                                  
+                                  
+                                  
+                                )
+                              )
+                       )
+                     )
+            
             )
  )
 
@@ -129,6 +169,35 @@ server <- function(input, output) {
   dirty_file <- reactive({(input$dirtyVar)})
   time_gap <- reactive({(input$time_int)})
   dirty_choice <- reactive({(input$dirtyType)})
+  Previous_Button=tags$div(actionButton("Prev_Tab","Previous"))
+  Next_Button=div(actionButton("Next_Tab","Next"))
+  
+  output$Next_Previous=renderUI({
+    tab_list=input$List_of_tab[-length(input$List_of_tab)]
+    nb_tab=length(tab_list)
+    if (which(tab_list==input$tabBox_next_previous)==nb_tab)
+      column(1,offset=1,Previous_Button)
+    else if (which(tab_list==input$tabBox_next_previous)==1)
+      column(1,offset = 10,Next_Button)
+    else
+      div(column(1,offset=1,Previous_Button),column(1,offset=8,Next_Button))
+    
+  })
+  observeEvent(input$Prev_Tab,
+               {
+                 tab_list=input$List_of_tab
+                 current_tab=which(tab_list==input$tabBox_next_previous)
+                 updateTabsetPanel(session,"tabBox_next_previous",selected=tab_list[current_tab-1])
+               }
+  )
+  observeEvent(input$Next_Tab,
+               {
+                 tab_list=input$List_of_tab
+                 current_tab=which(tab_list==input$tabBox_next_previous)
+                 updateTabsetPanel(session,"tabBox_next_previous",selected=tab_list[current_tab+1])
+               }
+  )
+  
   
   output$selected_clean <- renderText({ 
     paste("Below is an oxygen curve considered to be clean and complete for the time period of a", tolower(clean_type()), ":")
@@ -189,27 +258,24 @@ server <- function(input, output) {
                         format = "%Y-%m-%d %H:%M:%S"),
       values = DO$value
     )
-    print(dirty_dates$choice[1])
-    print(class(dirty_dates$choice[1]))
-    message(dirty_dates$choice[1])
     ggplot() +
+      ggtitle("DO Data from", choice)+
+      xlab("Date")+
+      ylab("DO (mgL)")+
       geom_point(df_DO, mapping=aes(x=date, y=values))+
       geom_rect(data = data.frame(xmin = as.POSIXct(c(dirty_dates[[choice]][1])),
                                   xmax = as.POSIXct(c(dirty_dates[[choice]][2])),
                                   ymin = dirty_DO_range[[choice]][1],
                                   ymax = dirty_DO_range[[choice]][2]),
                 aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
-                fill = "red", alpha = 0.2) 
+                fill = "red", alpha = 0.2)+
+      theme(
+        plot.title = element_text( size=17, face="bold"),
+        axis.title.x = element_text(size=14, face="bold"),
+        axis.title.y = element_text(size=14, face="bold")
+      )
   })
-  
-  output$dirty_info <- renderText({
-    
-    
-    
-    
-    
-    
-  })
+
   
   output$dirty_disch_plot <- renderPlot({
     choice <- dirty_choice()
@@ -220,26 +286,46 @@ server <- function(input, output) {
       values = disch$value
     )
     ggplot() +
+      ggtitle("Discharge Data from", choice)+
+      xlab("Date")+
+      ylab("Discharge (m3s)")+
       geom_point(df_disch, mapping=aes(x=date, y=values))+
       geom_rect(data = data.frame(xmin = as.POSIXct(c(dirty_dates[[choice]][1])),
                                   xmax = as.POSIXct(c(dirty_dates[[choice]][2])),
                                   ymin = dirty_disch_range[[choice]][1],
                                   ymax = dirty_disch_range[[choice]][2]),
                 aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
-                fill = "red", alpha = 0.2) 
+                fill = "red", alpha = 0.2) +
+      theme(
+        plot.title = element_text( size=17, face="bold"),
+        axis.title.x = element_text(size=14, face="bold"),
+        axis.title.y = element_text(size=14, face="bold"))
     
   })
   
-  #output$dirty_img<-renderUI({
-  #  if(dirty_choice()=='Storm'){
-  #    img(src='Storm.png', height = '300px', align = 'center')
-  #  }
-  #    
-#  })
-  
   output$dirty_text<-renderText({
-    if(dirty_choice() == 'Storm'){
-      paste("Storms can be identified with peaks in discharge plots as shown on May 2 with yellow points. When looking at the ")
+    if(dirty_choice() == "Storm"){
+      paste("Storms can be identified with peaks in discharge plots as shown on March 2 in the red area. When looking at the 
+            correlating disolved oxygen curve, the amplitude of the curve can be observed to have
+            decreased. However, the curve itself maintained the ideal clean and complete shape and can
+            be used to model metabolism.")
+    }
+    if(dirty_choice() == 'Gaps'){
+      paste("Sensors are removed from the stream in event of a storm to prevent the sensor from 
+            being lost in fast-flowing waters or for the general need to remove them for technical
+            reasons. The sensors can be removed for just hours or for multiple days, resulting in gaps
+            in the data such as in the dissolved oxygen graph below. With this missing data, researchers are unable to accurately model metabolism
+            for each day.")
+    }
+    if(dirty_choice() == 'Outliers'){
+      paste("Storms ")
+    }
+    if(dirty_choice() == 'Sensor Error'){
+      paste("As a broader type of bad data, sensor error encompasses a wide variety of situations in which
+            the data collected cannot be used to accurately calculate metabolism. These situations can 
+            range from the sensor being buried under sand or microbials, to there being a technical 
+            malfunction within the sensor. When visualizing such data, the data often appears random and
+            strays from the expected daily patterns as can be seen in the oxygen curve below.")
     }
       
   })
