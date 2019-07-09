@@ -10,32 +10,69 @@ library("lubridate")
 library("ggplot2")
 source("gap_detect.R")
 
+clean_dates <- vector(mode = "list", length = 3)
+names(clean_dates) <- c("Day", "Week", "Month")
+clean_dates[[1]] <- c("2017-03-07 00:00:00", "2017-03-08 00:00:00")
+clean_dates[[2]] <- c("2017-03-07 00:00:00", "2017-03-14 00:00:00")
+clean_dates[[3]] <- c("2017-03-07 00:00:00", "2017-04-07 00:00:00")
 
 dirty_dates <- vector(mode = "list", length = 4)
 names(dirty_dates) <- c("Storm", "Outliers", "Gaps", "Sensor Error")
 dirty_dates[[1]] <- c("2017-03-02 00:00:00", "2017-03-03 00:00:00")
-dirty_dates[[2]] <- c("2017-03-02 00:00:00", "2017-03-03 00:00:00")
-dirty_dates[[3]] <- c("2017-06-21 15:00:00", "2017-06-27 21:00:00")
+dirty_dates[[2]] <- c("2018-09-10 16:00:00", "2018-09-12 19:00:00")
+dirty_dates[[3]] <- c("2018-12-05 14:00:00", "2018-12-06 15:00:00")
 dirty_dates[[4]] <- c("2017-04-18 05:30:00", "2017-04-24 18:00:00")
 
 dirty_DO_range <- vector(mode = "list", length = 4)
 names(dirty_DO_range) <- c("Storm", "Outliers", "Gaps", "Sensor Error")
 dirty_DO_range[[1]] <- c(7.5, 12.5)
-dirty_DO_range[[2]] <- c(7.5, 12.5)
-dirty_DO_range[[3]] <- c(6, 9)
+dirty_DO_range[[2]] <- c(-900, 20)
+dirty_DO_range[[3]] <- c(7, 14)
 dirty_DO_range[[4]] <- c(1, 10)
 
 dirty_disch_range <- vector(mode = "list", length = 4)
 names(dirty_disch_range) <- c("Storm", "Outliers", "Gaps", "Sensor Error")
 dirty_disch_range[[1]] <- c(0, 6)
 dirty_disch_range[[2]] <- c(0,6)
-dirty_disch_range[[3]] <- c(0,6)
+dirty_disch_range[[3]] <- c(2,4)
 dirty_disch_range[[4]] <- c(0,140)
+
+dirty_info <- vector(mode = "list", length = 4)
+names(dirty_info) <- c("Storm", "Outliers", "Gaps", "Sensor Error")
+dirty_info[[1]] <- c("Storms can be identified with peaks in discharge plots as shown on March 2 in the red area. When looking at the 
+            correlating disolved oxygen curve, the amplitude of the curve can be observed to have
+            decreased. However, the curve itself maintained the ideal clean and complete shape and can
+            be used to model metabolism. In other cases, there is a sudden change in oxygen readings due to the
+            fast-changing oxygen levels. In these situations, the data cannot
+            be used to accurately model metabolism.")
+dirty_info[[2]] <- c("Outliers can result from a variety of situations. In this plot, the sensor is reading
+                     very negative values, which is indicitive of a temporary sensor malfunction or error. On the other
+                     hand, outliers can be accurate sensor readings, but with interferences, whether there is a film of
+                     aquatic organisms or sand surrounding the sensor.")
+dirty_info[[3]] <- c("Sensors are removed from the stream in event of a storm to prevent the sensor from 
+            being lost in fast-flowing waters or for the general need to remove them for technical
+            reasons. The sensors can be removed for just hours or for multiple days, resulting in gaps
+            in the data such as in the dissolved oxygen graph below. With this missing data, researchers are unable to accurately model metabolism
+            for each day.")
+dirty_info[[4]] <- c("As a broader type of bad data, sensor error encompasses a wide variety of situations in which
+            the data collected cannot be used to accurately calculate metabolism. These situations can 
+            range from the sensor being buried under sand or microbials, to there being a technical 
+            malfunction within the sensor. When visualizing such data, the data often appears random and
+            strays from the expected daily patterns as can be seen in the oxygen curve below.")
+
+tabs <- vector(mode = "list", length = 4)
+names(tabs) <- c("Introduction", "Tab2", "Tab3", "Tab4")
+tabs[[1]] <- c("Introduction")
+tabs[[2]] <- c("Tab2")
+tabs[[3]] <- c("Tab3")
+tabs[[4]] <- c("Tab4")
 
 ui <- fluidPage(
  navbarPage(title = "Guide to Dirty Data",
-              tabPanel("Metabolism", 
-                       fluidRow(
+            
+            #metabolism tab set-up
+            tabPanel("Metabolism", 
+                    fluidRow(
                          column(8, offset=2,
                                 h1("Metabolism"),
                                 br(),
@@ -59,34 +96,47 @@ ui <- fluidPage(
                                 ), 
                                 "This model uses the change in oxygen over every time interval to calculate the 
                                 oxygen produced through primary production and consumed through respiration to calculate
-                                the average metabolism for each day. Therefore, to accurately model metabolism, the 
+                                the average metabolism for each day, which can be represented with a curve-fitted oxygen graph
+                                as seen below where the observed values are in orange and the curve-fitted data is the solid line. 
+                                To obtain this accurate curve fitting and metabolism model, the 
                                 oxygen curve must be a complete data set with few gaps. There must also be a high variance
                                 in oxygen concentration such as in the oxygen curve below showing data for one day.",
-                                HTML('<center><img src="DO curve.png", width = 400, height = 400></center>'),
-                                tabBox(width=12,id="tabBox_next_previous",
-                                       tabPanel("Tab1",p("This is tab 1")),
-                                       tabPanel("Tab2",p("This is tab 2")),
-                                       tabPanel("Tab3",p("This is tab 3")),
-                                       tabPanel("Tab4",p("This is tab 4")),
-                                       tags$script("
-                                          $('body').mouseover(function() {
-                                          list_tabs=[];
-                                          $('#tabBox_next_previous li a').each(function(){
-                                          list_tabs.push($(this).html())
-                                          });
-                                          Shiny.onInputChange('List_of_tab', list_tabs);})
-                                          "
-                                       )
-                                ),
-                                uiOutput("Next_Previous"),
-                                
-                                  #tabPanel("Instructions",
-                                 #     
-                                    
-                                  #tabPanel("Raw Data: Oxygen Curve"),
-                                 # tabPanel("Next Step"),
-                                 # tabPanel("Final Step")
+                                HTML('<center><img src="DO curve fit.png", width = 600, height = 350></center>'),
+                                br(),
+                               
+                                #tabsetPanel(id="met_tabs",
+                                #       tabPanel(title="Introduction",
+                                #                p("This is tab 1")
+                                #       ),
+                                #       tabPanel(title="Tab2",
+                                #                p("This is tab 2")
+                                #       ),
+                                #       tabPanel(title="Tab3",p("This is tab 3")),
+                                #       tabPanel(title="Tab4",p("This is tab 4"))
+                                       
                                 #),
+                                #actionButton(inputId = "prev", "Previous"),
+                                #actionButton(inputId = "nex", "Next"),
+                                #br(),
+                                #br(),
+                                #br(),
+                                "Once daily metabolism is calculated and modeled, there are a variety of assumptions that can
+                                be made about that stream or section of stream that branch from the relationship between respiration
+                                and primary production. The primary factors of streams that affect the relationship between
+                                GPP and ER are light intensity, nutrients available, heat, sediments, and the flow of water. The impacts of each of these
+                                factors on GPP and ER can be seen below with the arrows directed towards the impact of increasing each factor.",
+                                br(),
+                                br(),
+                                HTML('<center><img src="Metabolism.png", width = 350, height = 350></center>'),
+                                br(),
+                                "One way to visualize the metabolism data is with 
+                                a contour plot of the different sites observed as done below comparing respiration to primary 
+                                production. The factors that influence the relationship between ER and GPP such as light, nutrients, heat, sediments,
+                                and water flow ",
+                                br(),
+                                br(),
+                                HTML('<center><img src="Contour.png", width = 650, height = 350></center>'),
+                                
                                 br(),
                                 br(),
                                 br()
@@ -95,6 +145,8 @@ ui <- fluidPage(
                                 
                        )
             ),
+            
+            #Clean Data tab set-up
             tabPanel("Clean Data", 
                      fluidRow(
                        column(10, offset=0,
@@ -108,19 +160,27 @@ ui <- fluidPage(
                                   br(),
                                   selectInput(inputId = "cleanVar",
                                               label = "Select time interval:",
-                                              choices = c("Day", "Week", "Month", "Year")
+                                              choices = c("Day", "Week", "Month")
                                   )
                                 ),
                                 mainPanel(
                                   h1("Ideal Data for Modeling Metabolism"),
+                                  br(),
                                   textOutput("selected_clean"),
-                                  plotOutput("plot_time")
+                                  br(),
+                                  plotOutput("plot_DO"),
+                                  br(),
+                                  plotOutput("plot_disc"),
+                                  br(),
+                                  plotOutput("metab_plot")
                                 )
                               )
                           )
                      )
                      
             ),
+            
+            #Dirty Data tab set-up
             tabPanel("Dirty Data", 
                      fluidRow(
                        column(10, offset=0,
@@ -146,7 +206,6 @@ ui <- fluidPage(
                                      font-size: 24px;
                                      font-style: bold;
                                      }")),
-                                  br(),
                                   textOutput("dirty_text"),
                                   br(),
                                   plotOutput("dirty_DO_plot"),
@@ -164,71 +223,107 @@ ui <- fluidPage(
 
 )
 
-server <- function(input, output) {
+server <- function(input, output, session) {
   clean_type <- reactive({(input$cleanVar)})
   dirty_file <- reactive({(input$dirtyVar)})
   time_gap <- reactive({(input$time_int)})
   dirty_choice <- reactive({(input$dirtyType)})
-  Previous_Button=tags$div(actionButton("Prev_Tab","Previous"))
-  Next_Button=div(actionButton("Next_Tab","Next"))
-  
-  output$Next_Previous=renderUI({
-    tab_list=input$List_of_tab[-length(input$List_of_tab)]
-    nb_tab=length(tab_list)
-    if (which(tab_list==input$tabBox_next_previous)==nb_tab)
-      column(1,offset=1,Previous_Button)
-    else if (which(tab_list==input$tabBox_next_previous)==1)
-      column(1,offset = 10,Next_Button)
-    else
-      div(column(1,offset=1,Previous_Button),column(1,offset=8,Next_Button))
-    
+
+  #Metabolism page: model walkthrough "Previous" button
+  observeEvent(input$prev, {
+     curr_tab = match(input$met_tabs, tabs)
+     if(curr_tab > 1){
+       prev_tab = tabs[[curr_tab-1]]
+     }
+     else{
+       prev_tab = curr_tab
+     }
+     updateTabsetPanel(session=session, inputId ="met_tabs",selected=tabs[[prev_tab]])
+     
   })
-  observeEvent(input$Prev_Tab,
-               {
-                 tab_list=input$List_of_tab
-                 current_tab=which(tab_list==input$tabBox_next_previous)
-                 updateTabsetPanel(session,"tabBox_next_previous",selected=tab_list[current_tab-1])
-               }
-  )
-  observeEvent(input$Next_Tab,
-               {
-                 tab_list=input$List_of_tab
-                 current_tab=which(tab_list==input$tabBox_next_previous)
-                 updateTabsetPanel(session,"tabBox_next_previous",selected=tab_list[current_tab+1])
-               }
-  )
+  
+  #Metabolism page: model walkthrough "Next" button
+  observeEvent(input$nex, {
+    curr_tab = match(input$met_tabs, tabs)
+    if(curr_tab < 4){
+      next_tab = tabs[[curr_tab+1]]
+    }
+    else{
+      next_tab = curr_tab
+    }
+    updateTabsetPanel(session=session, inputId ="met_tabs",selected=tabs[[next_tab]])
+  })
   
   
   output$selected_clean <- renderText({ 
-    paste("Below is an oxygen curve considered to be clean and complete for the time period of a", tolower(clean_type()), ":")
+    paste("Below is an oxygen curve considered to be clean and complete for the time period of a", tolower(clean_type()), "at 
+          Black Earth Creek in Wisconsin:")
   })
   
-  output$plot_time <- renderPlot({
-    if(clean_type() == "Day"){
-      clean <- read.csv("Day.csv")
-      graph_type <- "Day of Dissolved Oxygen Data"
-    }
-    if(clean_type() == "Week"){
-      clean <- read.csv("Week.csv")
-      graph_type <- "Week of Dissolved Oxygen Data"
-    }
-    if(clean_type() == "Month"){
-      clean <- read.csv("Month.csv")
-      graph_type <- "Month of Dissolved Oxygen Data"
-    }
-    if(clean_type() == "Year"){
-      clean <- read.csv("Month.csv")
-      graph_type <- "Year of Dissolved Oxygen Data"
-    }
+  output$plot_DO <- renderPlot({
+    clean <- read.csv(paste0(clean_type(), "_DO.csv"))
     df <- data.frame(
       date = clean$dateTimeUTC,
       value = clean$value
     )
-    plot(df$date, df$value,
-         type='l',
-         main = graph_type, 
-         xlab ="Time Stamp", 
-         ylab ="DO_mgL")
+    ggplot() +
+      ggtitle(paste(clean_type(), "of Dissolved Oxygen Data"))+
+      xlab("Date")+
+      ylab("DO (mgL)")+
+      geom_point(df, mapping=aes(x=date, y=value))+
+      theme(
+        plot.title = element_text( size=17, face="bold"),
+        axis.title.x = element_text(size=14, face="bold"),
+        axis.title.y = element_text(size=14, face="bold")
+      )
+  })
+  
+  output$plot_disc <- renderPlot({
+    clean <- read.csv(paste0(clean_type(), "_Discharge.csv"))
+    df <- data.frame(
+      date = clean$dateTimeUTC,
+      value = clean$value
+    )
+    ggplot() +
+      ggtitle(paste(clean_type(), "of Discharge Data"))+
+      xlab("Date")+
+      ylab("Discharge(m3s)")+
+      geom_point(df, mapping=aes(x=date, y=value))+
+      theme(
+        plot.title = element_text( size=17, face="bold"),
+        axis.title.x = element_text(size=14, face="bold"),
+        axis.title.y = element_text(size=14, face="bold")
+      )
+  })
+  
+  output$metab_plot <- renderPlot({
+    clean <- read.csv(paste0(clean_type(), "_metab.csv"))
+    df <- data.frame(
+      date = as.Date(clean$solar_date),
+      GPP = clean$GPP,
+      GPP_upper = clean$GPP_upper,
+      GPP_lower = clean$GPP_lower,
+      ER = clean$ER,
+      ER_upper = clean$ER_upper,
+      ER_lower = clean$ER_lower
+    )
+    ggplot(data=df, aes(x=date)) +
+      geom_line(aes(y=GPP, group = 1, colour="GPP"))+
+      geom_line(aes(y=ER,  group = 1, colour = "ER"))+
+      geom_ribbon(aes(ymin=df$GPP_lower, ymax=df$GPP_upper, group=1, fill="GPP 95% Confidence"), fill = "blue", alpha=0.25)+
+      geom_ribbon(aes(ymin=df$ER_lower, ymax=df$ER_upper, group=1, fill="ER 95% Confidence"), fill = "red", alpha=0.25)+
+      scale_colour_manual(name="Oxygen Variables", values=c("ER"="red","GPP"="blue"))+
+      scale_fill_manual(name="Oxygen Variables",values=c("GPP 95% Confidence"="blue", "ER 95% Confidence"="red"))+
+      ggtitle(paste(clean_type(), "of Metabolism Data"))+
+      scale_x_date(limits = as.Date(c(clean_dates[[clean_type()]][1],clean_dates[[clean_type()]][2]))) +
+      xlab("Date")+
+      ylab("Oxygen")+
+      theme(
+        plot.title = element_text( size=17, face="bold"),
+        axis.title.x = element_text(size=14, face="bold"),
+        axis.title.y = element_text(size=14, face="bold")
+      )
+    
   })
   
  # output$plot_time <- renderPlot({
@@ -259,7 +354,7 @@ server <- function(input, output) {
       values = DO$value
     )
     ggplot() +
-      ggtitle("DO Data from", choice)+
+      ggtitle(paste("DO Data with", choice))+
       xlab("Date")+
       ylab("DO (mgL)")+
       geom_point(df_DO, mapping=aes(x=date, y=values))+
@@ -286,48 +381,27 @@ server <- function(input, output) {
       values = disch$value
     )
     ggplot() +
-      ggtitle("Discharge Data from", choice)+
-      xlab("Date")+
-      ylab("Discharge (m3s)")+
-      geom_point(df_disch, mapping=aes(x=date, y=values))+
-      geom_rect(data = data.frame(xmin = as.POSIXct(c(dirty_dates[[choice]][1])),
-                                  xmax = as.POSIXct(c(dirty_dates[[choice]][2])),
-                                  ymin = dirty_disch_range[[choice]][1],
-                                  ymax = dirty_disch_range[[choice]][2]),
-                aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
-                fill = "red", alpha = 0.2) +
-      theme(
-        plot.title = element_text( size=17, face="bold"),
-        axis.title.x = element_text(size=14, face="bold"),
-        axis.title.y = element_text(size=14, face="bold"))
+        ggtitle(paste("Discharge Data with", choice))+
+        xlab("Date")+
+        ylab("Discharge (m3s)")+
+        geom_point(df_disch, mapping=aes(x=date, y=values))+
+        geom_rect(data = data.frame(xmin = as.POSIXct(c(dirty_dates[[choice]][1])),
+                                    xmax = as.POSIXct(c(dirty_dates[[choice]][2])),
+                                    ymin = dirty_disch_range[[choice]][1],
+                                    ymax = dirty_disch_range[[choice]][2]),
+                  aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
+                  fill = "red", alpha = 0.2) +
+    theme(
+          plot.title = element_text( size=17, face="bold"),
+          axis.title.x = element_text(size=14, face="bold"),
+          axis.title.y = element_text(size=14, face="bold"))
+    
+    
     
   })
   
   output$dirty_text<-renderText({
-    if(dirty_choice() == "Storm"){
-      paste("Storms can be identified with peaks in discharge plots as shown on March 2 in the red area. When looking at the 
-            correlating disolved oxygen curve, the amplitude of the curve can be observed to have
-            decreased. However, the curve itself maintained the ideal clean and complete shape and can
-            be used to model metabolism.")
-    }
-    if(dirty_choice() == 'Gaps'){
-      paste("Sensors are removed from the stream in event of a storm to prevent the sensor from 
-            being lost in fast-flowing waters or for the general need to remove them for technical
-            reasons. The sensors can be removed for just hours or for multiple days, resulting in gaps
-            in the data such as in the dissolved oxygen graph below. With this missing data, researchers are unable to accurately model metabolism
-            for each day.")
-    }
-    if(dirty_choice() == 'Outliers'){
-      paste("Storms ")
-    }
-    if(dirty_choice() == 'Sensor Error'){
-      paste("As a broader type of bad data, sensor error encompasses a wide variety of situations in which
-            the data collected cannot be used to accurately calculate metabolism. These situations can 
-            range from the sensor being buried under sand or microbials, to there being a technical 
-            malfunction within the sensor. When visualizing such data, the data often appears random and
-            strays from the expected daily patterns as can be seen in the oxygen curve below.")
-    }
-      
+    paste(dirty_info[[dirty_choice()]])
   })
 }
 
