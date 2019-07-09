@@ -1,5 +1,6 @@
 library(shiny)
 library(shinydashboard)
+library(scales)
 dashboardPage(
   dashboardHeader(disable = T),
   dashboardSidebar(disable = T),
@@ -29,6 +30,13 @@ dirty_DO_range[[1]] <- c(7.5, 12.5)
 dirty_DO_range[[2]] <- c(-900, 20)
 dirty_DO_range[[3]] <- c(7, 14)
 dirty_DO_range[[4]] <- c(1, 10)
+
+dirty_loc <- vector(mode = "list", length = 4)
+names(dirty_loc) <- c("Storm", "Outliers", "Gaps", "Sensor Error")
+dirty_loc[[1]] <- c("North Carolina" , "Eno")
+dirty_loc[[2]] <- c("North Carolina", "Stony Creek")
+dirty_loc[[3]] <- c("Arizona", "Lower Verde")
+dirty_loc[[4]] <- c("North Carolina", "Eno")
 
 dirty_disch_range <- vector(mode = "list", length = 4)
 names(dirty_disch_range) <- c("Storm", "Outliers", "Gaps", "Sensor Error")
@@ -263,7 +271,7 @@ server <- function(input, output, session) {
   output$plot_DO <- renderPlot({
     clean <- read.csv(paste0(clean_type(), "_DO.csv"))
     df <- data.frame(
-      date = clean$dateTimeUTC,
+      date = as.POSIXct(clean$dateTimeUTC, format="%Y-%m-%d %H:%M:%S"),
       value = clean$value
     )
     ggplot() +
@@ -271,6 +279,8 @@ server <- function(input, output, session) {
       xlab("Date")+
       ylab("DO (mgL)")+
       geom_point(df, mapping=aes(x=date, y=value))+
+      scale_x_datetime(breaks = date_breaks("2 days"),    
+                       labels = date_format("%m-%d"))+
       theme(
         plot.title = element_text( size=17, face="bold"),
         axis.title.x = element_text(size=14, face="bold"),
@@ -281,7 +291,7 @@ server <- function(input, output, session) {
   output$plot_disc <- renderPlot({
     clean <- read.csv(paste0(clean_type(), "_Discharge.csv"))
     df <- data.frame(
-      date = clean$dateTimeUTC,
+      date = as.POSIXct(clean$dateTimeUTC, format="%Y-%m-%d %H:%M:%S"),
       value = clean$value
     )
     ggplot() +
@@ -289,6 +299,8 @@ server <- function(input, output, session) {
       xlab("Date")+
       ylab("Discharge(m3s)")+
       geom_point(df, mapping=aes(x=date, y=value))+
+      scale_x_datetime(breaks = date_breaks("2 days"),    
+                       labels = date_format("%m-%d"))+
       theme(
         plot.title = element_text( size=17, face="bold"),
         axis.title.x = element_text(size=14, face="bold"),
@@ -354,7 +366,7 @@ server <- function(input, output, session) {
       values = DO$value
     )
     ggplot() +
-      ggtitle(paste("DO Data with", choice))+
+      ggtitle(paste("DO Data with", choice, "from", dirty_loc[[choice]][2], "in", dirty_loc[[choice]][1]))+
       xlab("Date")+
       ylab("DO (mgL)")+
       geom_point(df_DO, mapping=aes(x=date, y=values))+
@@ -381,7 +393,7 @@ server <- function(input, output, session) {
       values = disch$value
     )
     ggplot() +
-        ggtitle(paste("Discharge Data with", choice))+
+        ggtitle(paste("Discharge Data with", choice, "from", dirty_loc[[choice]][2], "in", dirty_loc[[choice]][1]))+
         xlab("Date")+
         ylab("Discharge (m3s)")+
         geom_point(df_disch, mapping=aes(x=date, y=values))+
