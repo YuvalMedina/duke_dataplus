@@ -6,6 +6,9 @@ import datetime as dt
 import scipy as sy
 import scipy.fftpack as syfp
 import pylab as pyl
+from array import array
+import csv
+import math
 
 myfile = pd.read_csv("flagged_sites.csv", sep=',', parse_dates=True)
 
@@ -73,3 +76,17 @@ dates = [dt.datetime.strptime(d,'%Y-%m-%d %H:%M:%S').date() for d in NC_Eno_Wate
 datenums = pltdates.date2num(dates)
 ax3.plot_date(dates, NC_Eno_WaterTempC_fft_flat)
 ax3.set_title("Eno, NC, fft flattening")
+
+
+#extracting a csv file with just gpp values:
+def makeGPPcsv(path):
+    file = pd.read_csv(path, sep=',', parse_dates=[2,3])
+    file = file.iloc[1:]
+    file['solar_date'] = pd.to_datetime(file['solar_date'], format='%Y-%m-%d %H:%M:%S')
+    ar = pd.to_numeric(file['GPP'], errors='coerce')
+    for x in range(len(ar)):
+        if(math.isnan(ar.iloc[x])):
+            ar.iloc[x] = 0
+    ar.to_csv("csv_files/gpp_list.csv", index=False, header=False)
+
+gpplist = makeGPPcsv("all_daily_model_results.csv")

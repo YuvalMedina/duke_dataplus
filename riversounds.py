@@ -13,22 +13,19 @@ import datetime as dt
 
 from main_functions import readFile, getData, plotGraph
 
-myfile = readFile("flagged_sites.csv")
+#parameters:
+path = "gpp_list"        #change to user input at some point!
 
-myregionsite_data = getData(myfile, region="NC", site="Eno")
-myVar_data = getData(myregionsite_data, variable="DO_mgL")
+myfile = pd.read_csv("csv_files/" + path + ".csv", header=None)
+myfile[0] = pd.to_numeric(myfile[0])
 
-plotGraph(myVar_data)
+myMean = np.mean(myfile)
+myStd = np.std(myfile)
+myMin = myMean - 4*myStd
+myMax = myMean + 4*myStd
+myRange = myMax - myMin
 
-mean = np.mean(myVar_data['value'])
-std_dev = np.std(myVar_data['value'])
-
-factors = dict({'DO_mgL': 60,
-                    'WaterTemp_C': 50,
-                    'pH': 100,
-                    'AirTemp_C': 70,
-                    'WaterPres_kPa': 4})
-factorized_mean = mean * factors["DO_mgL"]      #the variable name is at index 1, 3
+myfile = ((myfile - myMin)/myRange ) * 200 + 200
 
 if __name__ == "__main__":
 
@@ -41,6 +38,6 @@ if __name__ == "__main__":
 
     client = udp_client.SimpleUDPClient(args.ip, args.port)
 
-    for x in range(20):
-        client.send_message("/print", factorized_mean)
-        time.sleep(1)
+    for x in range(myfile.size):
+        client.send_message("/print", myfile.iloc[x,0])
+        time.sleep(0.001)
