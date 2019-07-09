@@ -21,3 +21,5 @@ x = OSCFunc( { | msg, time, addr, port |
 	h.set( \freq, pyFreq );
 }, '/print' );
 )
+
+s.freeAll;

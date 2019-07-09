@@ -14,21 +14,18 @@ import datetime as dt
 from main_functions import readFile, getData, plotGraph
 
 #parameters:
-path = "NC_Eno_WaterTemp_C"        #change to user input at some point!
-delta = 4           #how many std_dev's from mean are we tolerating
+path = "gpp_list"        #change to user input at some point!
 
-myfile = readFile("csv_files/" + path + ".csv")
+myfile = pd.read_csv("csv_files/" + path + ".csv", header=None)
+myfile[0] = pd.to_numeric(myfile[0])
 
-clean = myfile.loc[myfile['flagID']!="Bad Data"]
-clean = clean.drop_duplicates(subset=['dateTimeUTC'], keep='first')
+myMean = np.mean(myfile)
+myStd = np.std(myfile)
+myMin = myMean - 4*myStd
+myMax = myMean + 4*myStd
+myRange = myMax - myMin
 
-mean = np.mean(clean['value'])
-std_dev = np.std(clean['value'])
-
-clean = clean[(clean.value < (mean + (delta * std_dev))) & (clean.value > (mean - (delta * std_dev)))]
-
-nums = (clean['value'] - mean) / std_dev
-nums = np.float32(nums)
+myfile = ((myfile - myMin)/myRange ) * 200 + 200
 
 if __name__ == "__main__":
 
@@ -41,5 +38,6 @@ if __name__ == "__main__":
 
     client = udp_client.SimpleUDPClient(args.ip, args.port)
 
-    msg = osc_message_builder.OscMessageBuilder(address='/s_new')
-    msg.add_arg(nums, arg_type=)
+    for x in range(myfile.size):
+        client.send_message("/print", myfile.iloc[x,0])
+        time.sleep(0.001)
