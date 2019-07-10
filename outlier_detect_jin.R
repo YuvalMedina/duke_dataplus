@@ -19,12 +19,32 @@ outlier.detect <- function(raw_dat){
   outliers
 }
 
-my_out <- outlier.detect("NC_Eno_DO_mgL.csv")
-my_dat <- read.csv("NC_Eno_DO_mgL.csv")
-
+my_out <- outlier.detect("Outliers_DO.csv")
+my_dat <- read.csv("Outliers_DO.csv")
+my_dat$dateTimeUTC <- as.POSIXct(my_dat$dateTimeUTC)
+my_out$dateTimeUTC <- as.POSIXct(my_out$dateTimeUTC)
 ggplot()+
-  geom_point(my_dat, mapping=aes(x=dateTimeUTC, y=value, colour="blue"))+
-  geom_point(my_out, mapping=aes(x=dateTimeUTC, y=value, colour="red"))
+  geom_point(data=my_dat, mapping=aes(x=dateTimeUTC, y=value))+
+  geom_point(data = my_out, mapping=aes(x=dateTimeUTC, y=value, colour="outliers"))
 
 
-    
+#assuming every spike up there is a spike down drop
+df <- data.frame(date = as.POSIXct(my_dat$dateTimeUTC, tz='', 
+                                   format = "%Y-%m-%d %H:%M:%S"), value = my_dat$value)   
+df$diff <- c(NA, with(df, value[-1] - value[-nrow(df)]))
+df$over_thresh <- df$diff > 1
+df$under_thresh <- df$diff < -1
+spike_up <- which(df$over_thresh)
+spike_down <- which(df$under_thresh)
+for(i in length(spike_up)){
+  if(spike_up[i] < spike_down[i]){
+    df_out <- df[spike_up[i]:(spike_down[i]-1),]
+  }
+  else
+    df_out <- df[spike_down[i]:(spike_up[i]-1),]
+}
+ggplot()+
+  geom_point(data=my_dat, mapping=aes(x=dateTimeUTC, y=value))+
+  geom_point(data = df_out, mapping=aes(x=date, y=value, colour="outliers"))
+
+
