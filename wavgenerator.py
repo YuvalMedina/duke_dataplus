@@ -8,7 +8,7 @@ import sys
 
 from main_functions import readFile, getData, plotGraph
 
-path = "NC_UEno_WaterTemp_C"
+path = "AZ_LV_Battery_V"
 
 currentfile = readFile("csv_files/" + path + ".csv")
 
@@ -30,5 +30,5 @@ bytes = nums.tobytes()
 wavfile.setparams((1,4, 44100, 0, 'NONE', 'NONE'))
 wavfile.writeframes(bytes)
 
-plt.plot(clean['dateTimeUTC'],clean['value'])
+plt.plot(clean['dateTimeUTC'],clean['value'], 'go', label='Eno River Water Temperature')
 plt.show

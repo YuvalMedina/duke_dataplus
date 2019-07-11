@@ -88,8 +88,8 @@ ui <- fluidPage(
                                 "Stream metabolism is the measure of energy exchanged within the 
                                 stream ecosystem in the forms of oxygen and carbon. The two primary modes
                                 of exchange are primary production by autotrophs in which oxygen is produced and
-                                carbon is consumed, and respiration by heterotrophs in which oxygen is consumed
-                                carbon is produced. As research in stream metabolism modeling expands, we can gain
+                                carbon dioxide is consumed, and respiration by heterotrophs in which oxygen is consumed
+                                carbon dioxide is produced. As research in stream metabolism modeling expands, we can gain
                                 a deeper understanding in how different external disturbances and environments
                                 can affect the productivity of the stream ecosystem.",
                                 br(),
@@ -310,6 +310,9 @@ server <- function(input, output, session) {
   
   output$metab_plot <- renderPlot({
     clean <- read.csv(paste0(clean_type(), "_metab.csv"))
+    if(clean_type() == "Day"){
+      return(NULL)
+    }
     df <- data.frame(
       date = as.Date(clean$solar_date),
       GPP = clean$GPP,
@@ -322,10 +325,10 @@ server <- function(input, output, session) {
     ggplot(data=df, aes(x=date)) +
       geom_line(aes(y=GPP, group = 1, colour="GPP"))+
       geom_line(aes(y=ER,  group = 1, colour = "ER"))+
-      geom_ribbon(aes(ymin=df$GPP_lower, ymax=df$GPP_upper, group=1, fill="GPP 95% Confidence"), fill = "blue", alpha=0.25)+
-      geom_ribbon(aes(ymin=df$ER_lower, ymax=df$ER_upper, group=1, fill="ER 95% Confidence"), fill = "red", alpha=0.25)+
-      scale_colour_manual(name="Oxygen Variables", values=c("ER"="red","GPP"="blue"))+
-      scale_fill_manual(name="Oxygen Variables",values=c("GPP 95% Confidence"="blue", "ER 95% Confidence"="red"))+
+      geom_ribbon(aes(ymin=df$GPP_lower, ymax=df$GPP_upper, group=1, fill="GPP 95% Confidence"), fill = "red", alpha=0.25)+
+      geom_ribbon(aes(ymin=df$ER_lower, ymax=df$ER_upper, group=1, fill="ER 95% Confidence"), fill = "blue", alpha=0.25)+
+      scale_colour_manual(name="Oxygen Variables", values=c("ER"="blue","GPP"="red"))+
+      scale_fill_manual(name="Oxygen Variables",values=c("GPP 95% Confidence"="red", "ER 95% Confidence"="blue"))+
       ggtitle(paste(clean_type(), "of Metabolism Data"))+
       scale_x_date(limits = as.Date(c(clean_dates[[clean_type()]][1],clean_dates[[clean_type()]][2]))) +
       xlab("Date")+
@@ -386,6 +389,9 @@ server <- function(input, output, session) {
   
   output$dirty_disch_plot <- renderPlot({
     choice <- dirty_choice()
+    if(choice == "Outliersre"){
+      return(NULL)
+    }
     disch <- read.csv(paste0(choice, "_discharge.csv"))
     df_disch <- data.frame(
       date = as.POSIXct(disch$dateTimeUTC, tz='', 
