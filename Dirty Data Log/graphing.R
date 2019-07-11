@@ -87,4 +87,32 @@ df_DO <- data.frame(
   date = storm_DO$dateTimeUTC,
   values = storm_DO$value
 )
-  
+
+clean <- read.csv("Month_metab.csv")
+
+df <- data.frame(
+  date = as.Date(clean$solar_date),
+  GPP = clean$GPP,
+  GPP_upper = clean$GPP_upper,
+  GPP_lower = clean$GPP_lower,
+  ER = clean$ER,
+  ER_upper = clean$ER_upper,
+  ER_lower = clean$ER_lower
+)
+ggplot(data=df, aes(x=date)) +
+  geom_line(aes(y=GPP, group = 1, colour="GPP"))+
+  geom_line(aes(y=ER,  group = 1, colour = "ER"))+
+  geom_ribbon(aes(ymin=df$GPP_lower, ymax=df$GPP_upper, group=1, fill="GPP 95% Confidence"), fill = "blue", alpha=0.25)+
+  geom_ribbon(aes(ymin=df$ER_lower, ymax=df$ER_upper, group=1, fill="ER 95% Confidence"), fill = "red", alpha=0.25)+
+  scale_colour_manual(name="Oxygen Variables Observed", values=c("ER"="red","GPP"="blue"))+
+  scale_fill_manual(name='Oxygen Variables Observed',values=c("GPP 95% Confidence"="blue", "ER 95% Confidence"="red"))+
+  scale_x_date(limits = as.Date(c("2017-03-07","2017-04-07"))) +
+  xlab("Date")+
+  ylab("Oxygen")+
+  theme(
+    plot.title = element_text( size=17, face="bold"),
+    axis.title.x = element_text(size=14, face="bold"),
+    axis.title.y = element_text(size=14, face="bold")
+  )
+
+
