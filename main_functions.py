@@ -5,7 +5,7 @@ import matplotlib.dates as pltdates
 import datetime as dt
 
 def readFile(name):
-    myfile = pd.read_csv(name, sep=',', parse_dates=[2])
+    myfile = pd.read_csv(name, sep=',')
     myfile['dateTimeUTC'] = pd.to_datetime(myfile['dateTimeUTC'], format='%Y-%m-%d %H:%M:%S')
     myfile['value'] = pd.to_numeric(myfile['value'])
     return myfile
