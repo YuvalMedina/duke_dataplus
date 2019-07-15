@@ -81,11 +81,11 @@ SynthDef.new(\pinknoises, {
 	sig = PinkNoise.ar(1!2);
 	sig = sig * [ampL, ampR];
 	sig = FreeVerb.ar(sig);
-	Out.ar(out, sig);
+	Out.ar(out, sig * vol);
 }).add;
 )
 
-z = Synth.new(\pinknoises, [\vol, 0.5], ~soundingGrp);
+z = Synth.new(\pinknoises, [\vol, 0.01]);
 s.record;
 s.stopRecording;
 z.free;
