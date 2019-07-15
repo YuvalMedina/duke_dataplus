@@ -14,38 +14,45 @@ import datetime as dt
 
 from main_functions import readFile, getData, plotGraph
 
-READINGS = 269      #number of readings of gpp from Eno!
-FRAMES = 1          #how slow we're going through, when one, we go 1frame/0.1sec
+site = 'PR'
+region = 'QS'
+start_date = dt.datetime.strptime('2017-01-01', '%Y-%m-%d')   #2017-01-01
+end_date = dt.datetime.strptime('2017-12-29', '%Y-%m-%d')   #2017-12-29
+
+mygpp = pd.read_csv("all_daily_model_results.csv", sep=',', skiprows=[1], parse_dates=['year', 'solar_date'], dtype={'GPP':np.float64, 'GPP_lower':np.float64,
+                                                                        'GPP_upper':np.float64, 'ER':np.float64, 'ER_lower':np.float64,
+                                                                        'ER_upper':np.float64, 'K600':np.float64, 'K600_lower':np.float64,
+                                                                        'K600_upper':np.float64}, na_values=['\\N'])
+mygpp = mygpp.loc[(mygpp['region']==site) & (mygpp['site']==region)]
+mygpp = mygpp.loc[(mygpp['solar_date'] >= start_date) & (mygpp['solar_date'] <= end_date)]
+READINGS = mygpp['GPP'].count()      #number of readings of gpp from river! from OC is 687
+FRAMES = 20          #how slow we're going through, when one, we go 1frame/0.1sec
+#optimal frame for discharge (lightning and pinknoises) is 20 (1frame/2sec)
+#for all others, frame=1 is great
 
 #parameters:
-path = "NC_Eno_DO_mgL"        #change to user input at some point!
+#path = "NC_Eno_DO_mgL"        #change to user input at some point!
+path = site + '_' + region + '_' + "sensorData"
+variable = "Discharge_m3s"
 
-#path = "all_daily_model_results"   #length of Eno gpp is 269 days
-#myfile = pd.read_csv(path + ".csv", sep=',', skiprows=[1], parse_dates=['year', 'solar_date'], dtype={'GPP':np.float64, 'GPP_lower':np.float64,
-#                                                                        'GPP_upper':np.float64, 'ER':np.float64, 'ER_lower':np.float64,
-#                                                                        'ER_upper':np.float64, 'K600':np.float64, 'K600_lower':np.float64,
-#                                                                        'K600_upper':np.float64}, na_values=['\\N'])
 
-myfile = readFile('csv_files/' + path + '.csv')
-start_date = dt.datetime.strptime('2016-12-31', '%Y-%m-%d')   #2016-12-31
-end_date = dt.datetime.strptime('2017-09-26', '%Y-%m-%d')   #2017-09-25 is last date
-myvalues = myfile.loc[(myfile['dateTimeUTC'] >= start_date) & (myfile['dateTimeUTC'] < end_date)]
+myfile = pd.read_csv('csv_files/' + 'Complete_Sensor_Data/' + path + '.csv', sep=',')
+myfile['DateTime_UTC'] = pd.to_datetime(myfile['DateTime_UTC'], format='%Y-%m-%d %H:%M:%S')
+myfile['value'] = pd.to_numeric(myfile['value'])
+myvalues = myfile.loc[(myfile['DateTime_UTC'] >= start_date) & (myfile['DateTime_UTC'] <= end_date)]
+myvalues = myvalues.loc[myfile['variable'] == variable]
 myvalues = myvalues['value']
-#myvalues   #25824 members
-
-#myvalues = myfile.loc[(myfile['region']=='NC') & (myfile['site']=='Eno')]
-#start_date = dt.datetime.strptime('2016-12-31', '%Y-%m-%d')   #2016-12-31
-#end_date = dt.datetime.strptime('2017-09-26', '%Y-%m-%d')   #2017-09-25 is last date
-#myvalues = myvalues.loc[(myfile['solar_date'] >= start_date) & (myfile['solar_date'] < end_date)]
-#myvalues = myvalues['GPP']
+#myvalues holds the variable for the timespan of gpp
 
 
 
 #modulating volume or frequency?
 def volume():
-    print('yay')
+    print('wow')
 
 def frequency():
+    myvalues = mygpp['GPP']
+
     myMean = np.mean(myvalues)
     myStd = np.std(myvalues)
     myMin = myMean - 4*myStd
@@ -69,7 +76,7 @@ def frequency():
 
         for x in range(len(myvalues)):
             client.send_message("/print", myvalues.iloc[x])
-            time.sleep(0.2)
+            time.sleep(0.1)
 
         client.send_message("/print", 0.0)
 
@@ -115,11 +122,11 @@ if __name__ == "__main__":
     client = udp_client.SimpleUDPClient(args.ip, args.port)
 
     for x in range(len(std_devs)):
-        client.send_message("/print", std_devs[x])
-#        if(thunder[x]):
-#            client.send_message("/thunder", 1)
-#        else:
-#            client.send_message("/thunder", 0)
-        time.sleep(0.2 * FRAMES)
+        #client.send_message("/print", std_devs[x])
+        if(thunder[x]):
+            client.send_message("/thunder", 1)
+        else:
+            client.send_message("/thunder", 0)
+        time.sleep(0.1 * FRAMES)
 
     client.send_message("/print", 0.0)
