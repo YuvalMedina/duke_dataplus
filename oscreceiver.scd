@@ -12,7 +12,7 @@ SynthDef( \sin,	{ | amp = 0.01, freq = 291, trig = 1 |
 }).add;
 
 //reader for gpp, sinoscillators
-h = Synth( \gppsound, [ \amp, 0.1 , \freq, 300.0] );
+h = Synth( \gppsound, [ \amp, 0.1 , \freq, 0.0] );
 
 x = OSCFunc( { | msg, time, addr, port |
 	var pyFreq;
@@ -84,9 +84,8 @@ x.free; b.free;
 
 (
 SynthDef(\dissolved_oxygen, { arg out=0, vol=0.01, freq=0.0, trig=1;
-	var a, sig, mod=5;
-	a = LFTri.ar(freq + (freq * SinOsc.ar(mod,0,0.02)));
-	sig = Mix.ar(a!2);
+	var sig, mod=5;
+	sig = Pan2.ar(LFTri.ar(freq + (freq * SinOsc.ar(mod,0,0.02))));
 	Out.ar(0, sig * vol);
 }).add;
 )
