@@ -112,7 +112,7 @@ x = OSCFunc( { | msg, time, addr, port |
 
 	pyFreq = msg[1].asFloat;
 	( "freq is " + pyFreq ).postln;
-	h.set( \freq, pyFreq * 2000 + 500 );
+	h.set( \freq, pyFreq * 2000 + 1000 );
 }, '/print' );
 
 //reader for dissolved oxygen 2 – not recorded, not working yet
