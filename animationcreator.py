@@ -4,6 +4,7 @@ import seaborn as sns
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+import datetime as dt
 
 from main_functions import readFile, getData, plotGraph
 
@@ -19,7 +20,9 @@ mygpp = pd.read_csv("all_daily_model_results.csv", sep=',', skiprows=[1], parse_
                                                                         'K600_upper':np.float64}, na_values=['\\N'])
 mygpp = mygpp.loc[(mygpp['region']==region) & (mygpp['site']==site)]
 mygpp = mygpp.loc[(mygpp['solar_date'] >= start_date) & (mygpp['solar_date'] <= end_date)]
-READINGS = mygpp['GPP'].count()      #number of readings of gpp from river! from OC is 687
+mygpp = mygpp[['solar_date','GPP']]
+mygpp.columns = ['DateTime_UTC','value']
+READINGS = mygpp['value'].count()      #number of readings of gpp from river! from OC is 687
 FRAMESIZE = 1          #how slow we're going through, when one, we go 1frame/0.1sec
 #optimal frame for discharge (lightning and pinknoises) is 20 (1frame/2sec)
 #for all others, frame=1 is great
@@ -30,18 +33,48 @@ variable = "DO_mgL"
 myfile = pd.read_csv('csv_files/' + 'Complete_Sensor_Data/' + path + '.csv', sep=',')
 myfile['DateTime_UTC'] = pd.to_datetime(myfile['DateTime_UTC'], format='%Y-%m-%d %H:%M:%S')
 myfile['value'] = pd.to_numeric(myfile['value'])
-myvalues = myfile.loc[(myfile['DateTime_UTC'] >= start_date) & (myfile['DateTime_UTC'] <= end_date)]
-myvalues = myvalues.loc[myfile['variable'] == variable]
+myfile = myfile.loc[(myfile['DateTime_UTC'] >= start_date) & (myfile['DateTime_UTC'] <= end_date)]
+myfile = myfile.loc[myfile['variable'] == variable]
+myfile = myfile[['DateTime_UTC','value']]
 
-%matplotlib notebook
+myvalues = myfile
+
 title = region + ', ' + site + ', ' + 'GPP'
-y = np.array(mygpp['GPP'])
-x = np.array(mygpp['solar_date'])
+y = np.array(myvalues['value'])
+x = np.array(myvalues['DateTime_UTC'])
 gppplot = pd.DataFrame(y,x)
 
 Writer = animation.writers['ffmpeg']
-writer = Writer(fps=READINGS/FRAMESIZE*10, metadata=dict(artist='Me'), bitrate=1800)
+writer = Writer(fps=10, metadata=dict(artist='Me'), bitrate=1800)
 
 fig = plt.figure(figsize=(10,6))
 plt.title(title)
 plt.plot_date(x,y)
+plt.xlabel(variable)
+plt.ylabel('Time Stamp')
+plt.title(variable + ' over time', fontsize=22)
+
+plt.clf()
+
+#def init():
+#    scat.set_offsets([])
+#    return scat
+
+skipby = myvalues.size / READINGS * FRAMESIZE
+
+def animate(i):
+    data = myvalues.iloc[:int((i+1) * skipby)] #select data range
+    p = sns.lineplot(x=data['DateTime_UTC'], y=data['value'], data=data, color="r")
+    p.tick_params(labelsize=17)
+    plt.setp(p.lines,linewidth=7)
+
+#def animate(i):
+#    data = np.hstack((x[:i,np.newaxis], y[:i, np.newaxis]))
+#    scat.set_offsets(data)
+#    return scat
+
+#init_func=init,
+ani = matplotlib.animation.FuncAnimation(fig, animate, frames=int(READINGS/FRAMESIZE),
+                               interval=100, blit=False, repeat=True)
+
+ani.save('GPP_animation_test.mp4', writer=writer)
