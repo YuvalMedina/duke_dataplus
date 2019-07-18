@@ -23,7 +23,7 @@ dirty_dates[[1]] <- c("2017-03-02 00:00:00", "2017-03-03 00:00:00")
 dirty_dates[[2]] <- c("2017-05-30 13:00:00", "2017-05-30 14:30:00")
 dirty_dates[[3]] <- c("2018-12-05 14:00:00", "2018-12-06 15:00:00")
 dirty_dates[[4]] <- c("2017-04-18 05:30:00", "2017-04-24 18:00:00")
-dirty_dates[[5]] <- c("2017-04-18 05:30:00", "2017-04-24 18:00:00")
+dirty_dates[[5]] <- c("2019-05-15 05:30:00", "2019-06-03 20:00:00")
 
 dirty_DO_range <- vector(mode = "list", length = 5)
 names(dirty_DO_range) <- c("Storm", "Outliers", "Gaps", "Sensor Error", "Sensor Out of Water" )
@@ -31,7 +31,7 @@ dirty_DO_range[[1]] <- c(7.5, 12.5)
 dirty_DO_range[[2]] <- c(6, 9)
 dirty_DO_range[[3]] <- c(7, 14)
 dirty_DO_range[[4]] <- c(1, 10)
-dirty_DO_range[[5]] <- c(1, 10)
+dirty_DO_range[[5]] <- c(0, 12)
 
 dirty_loc <- vector(mode = "list", length = 5)
 names(dirty_loc) <- c("Storm", "Outliers", "Gaps", "Sensor Error", "Sensor Out of Water")
@@ -39,7 +39,7 @@ dirty_loc[[1]] <- c("North Carolina" , "Eno")
 dirty_loc[[2]] <- c("North Carolina", "Eno")
 dirty_loc[[3]] <- c("Arizona", "Lower Verde")
 dirty_loc[[4]] <- c("North Carolina", "Eno")
-dirty_loc[[5]] <- c("North Carolina", "Eno")
+dirty_loc[[5]] <- c("North Carolina", "Concrete Bridge Pool")
 
 dirty_disch_range <- vector(mode = "list", length = 5)
 names(dirty_disch_range) <- c("Storm", "Outliers", "Gaps", "Sensor Error", "Sensor Out of Water")
@@ -47,7 +47,7 @@ dirty_disch_range[[1]] <- c(0, 6)
 dirty_disch_range[[2]] <- c(0,6)
 dirty_disch_range[[3]] <- c(2,4)
 dirty_disch_range[[4]] <- c(0,140)
-dirty_disch_range[[5]] <- c(0, 10)
+dirty_disch_range[[5]] <- c(0, 40)
 
 dirty_info <- vector(mode = "list", length = 5)
 names(dirty_info) <- c("Storm", "Outliers", "Gaps", "Sensor Error", "Sensor Out of Water")
@@ -71,7 +71,13 @@ dirty_info[[4]] <- c("As a broader type of bad data, sensor error encompasses a 
             range from the sensor being buried under sand or microbials, to there being a technical 
             malfunction within the sensor. When visualizing such data, the data often appears random and
             strays from the expected daily patterns as can be seen in the oxygen curve below.")
-dirty_info[[5]] <- c("")
+dirty_info[[5]] <- c("There are often cases where water level may drop so that the sensor is no longer below the
+                     surface of the water. Some of teh variables observed may not be affected in a way that can easily
+                     be observed in the data, but a good indicator is in the water temperature. Because water temperature varies
+                     much less than air temperature, this situation can easily be checked using temperature data. 
+                     Also, since the daily patterns are still apparent, this unexpected 'bad data' is not a general sensor
+                     error. This is a case where it is important to check other variables to ensure that the sensor data can be
+                     used to accurately represent the stream.")
 
 tabs <- vector(mode = "list", length = 4)
 names(tabs) <- c("Introduction", "Tab2", "Tab3", "Tab4")
@@ -198,7 +204,7 @@ ui <- fluidPage(
             #Dirty Data tab set-up
             tabPanel("Dirty Data", 
                      fluidRow(
-                       column(10, offset=0,
+                       column(11, offset=0,
                               sidebarLayout(
                                 sidebarPanel(
                                   h3("Dirty Data"),
@@ -397,19 +403,25 @@ server <- function(input, output, session) {
   
   output$dirty_disch_plot <- renderPlot({
     choice <- dirty_choice()
-    if(choice == "Outliersre"){
-      return(NULL)
+    if(choice == "Sensor Out of Water"){
+      disch <- read.csv("Sensor Out of Water_waterTemp.csv")
+      y <- 'Water Temperature (C)'
+      tit <- "Water Temperature"
     }
-    disch <- read.csv(paste0(choice, "_discharge.csv"))
+    else{
+      disch <- read.csv(paste0(choice, "_discharge.csv"))
+      y <- "Discharge (m3s)"
+      tit <- "Discharge"
+    }
     df_disch <- data.frame(
       date = as.POSIXct(disch$dateTimeUTC, tz='', 
                         format = "%Y-%m-%d %H:%M:%S"),
       values = disch$value
     )
     ggplot() +
-        ggtitle(paste("Discharge Data with", choice, "from", dirty_loc[[choice]][2], "in", dirty_loc[[choice]][1]))+
+        ggtitle(paste(tit, "Data with", choice, "from", dirty_loc[[choice]][2], "in", dirty_loc[[choice]][1]))+
         xlab("Date")+
-        ylab("Discharge (m3s)")+
+        ylab(y)+
         geom_point(df_disch, mapping=aes(x=date, y=values))+
         geom_rect(data = data.frame(xmin = as.POSIXct(c(dirty_dates[[choice]][1])),
                                     xmax = as.POSIXct(c(dirty_dates[[choice]][2])),

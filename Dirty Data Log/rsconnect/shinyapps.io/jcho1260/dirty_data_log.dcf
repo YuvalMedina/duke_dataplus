@@ -5,6 +5,8 @@ account: jcho1260
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 1017110
-bundleId: 2222191
+bundleId: 2242927
 url: https://jcho1260.shinyapps.io/dirty_data_log/
-when: 1562858047.20614
+when: 1563419626.15071
+asMultiple: FALSE
+asStatic: FALSE
