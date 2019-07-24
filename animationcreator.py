@@ -9,10 +9,12 @@ import datetime as dt
 from main_functions import readFile, getData, plotGraph
 
 gpppath = 'all_daily_model_results'
-region = 'NC'
-site = 'Eno'
+region = 'PR'
+site = 'QS'
 start_date = dt.datetime.strptime('2017-01-01', '%Y-%m-%d')   #2017-01-01
 end_date = dt.datetime.strptime('2017-12-29', '%Y-%m-%d')   #2017-12-29
+
+doing_GPP = True    #whether or not we're plotting GPP or our variable
 
 mygpp = pd.read_csv("all_daily_model_results.csv", sep=',', skiprows=[1], parse_dates=['year', 'solar_date'], dtype={'GPP':np.float64, 'GPP_lower':np.float64,
                                                                         'GPP_upper':np.float64, 'ER':np.float64, 'ER_lower':np.float64,
@@ -22,7 +24,7 @@ mygpp = mygpp.loc[(mygpp['region']==region) & (mygpp['site']==site)]
 mygpp = mygpp.loc[(mygpp['solar_date'] >= start_date) & (mygpp['solar_date'] <= end_date)]
 mygpp = mygpp[['solar_date','GPP']]
 mygpp.columns = ['DateTime_UTC','value']
-READINGS = mygpp['value'].count()      #number of readings of gpp from river! from OC is 687
+READINGS = len(mygpp['value'])      #number of readings of gpp from river! from OC is 687
 FRAMESIZE = 1          #how slow we're going through, when one, we go 1frame/0.1sec
 #optimal frame for discharge (lightning and pinknoises) is 20 (1frame/2sec)
 #for all others, frame=1 is great
@@ -37,12 +39,22 @@ myfile = myfile.loc[(myfile['DateTime_UTC'] >= start_date) & (myfile['DateTime_U
 myfile = myfile.loc[myfile['variable'] == variable]
 myfile = myfile[['DateTime_UTC','value']]
 
-myvalues = myfile
+myvalues = pd.DataFrame()
+skipby = 1
 
-title = region + ', ' + site + ', ' + 'GPP'
+if(doing_GPP):
+    myvalues = mygpp
+    variable = 'GPP'
+    skipby = 1
+else:
+    myvalues = myfile
+    skipby = myvalues.size / READINGS * FRAMESIZE
+
+
+title = region + ', ' + site + ', ' + variable
 y = np.array(myvalues['value'])
 x = np.array(myvalues['DateTime_UTC'])
-gppplot = pd.DataFrame(y,x)
+varplot = pd.DataFrame(y,x)
 
 Writer = animation.writers['ffmpeg']
 writer = Writer(fps=10, metadata=dict(artist='Me'), bitrate=1800)
@@ -54,13 +66,11 @@ plt.xlabel(variable)
 plt.ylabel('Time Stamp')
 plt.title(variable + ' over time', fontsize=22)
 
-plt.clf()
+#plt.clf()
 
 #def init():
 #    scat.set_offsets([])
 #    return scat
-
-skipby = myvalues.size / READINGS * FRAMESIZE
 
 def animate(i):
     data = myvalues.iloc[:int((i+1) * skipby)] #select data range
@@ -77,4 +87,4 @@ def animate(i):
 ani = matplotlib.animation.FuncAnimation(fig, animate, frames=int(READINGS/FRAMESIZE),
                                interval=100, blit=False, repeat=True)
 
-ani.save('GPP_animation_test.mp4', writer=writer)
+ani.save('/Users/yuvalmedina/Music/SuperCollider Recordings/' + region + '_' + site + '_' + variable + '_animation.mp4', writer=writer)
