@@ -1,4 +1,4 @@
-//receiving from iPython
+//receiving from python-osc
 
 s.boot;
 NetAddr.langPort.postln;
@@ -111,7 +111,7 @@ x = OSCFunc( { | msg, time, addr, port |
 	var pyFreq;
 
 	pyFreq = msg[1].asFloat;
-	( "freq is " + pyFreq ).postln;
+	( "std dev is " + pyFreq ).postln;
 	h.set( \freq, pyFreq * 2000 + 1000 );
 }, '/print' );
 
