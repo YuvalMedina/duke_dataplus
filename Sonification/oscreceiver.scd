@@ -57,6 +57,10 @@ setvar = OSCFunc( { | msg, time, addr, port |
 
 start = OSCFunc( { | msg, time, addr, port |
 	s.record;
+	x = case
+	{ variable == 'GPP' }   { h = Synth( \gppsound, [ \amp, 0.1 , \freq, 0.0] ); }
+	{ variable == 'DO_mgL' } { h = Synth( \dissolved_oxygen, [ \freq, 0] ); }
+	{ variable == 'Discharge_m3s' } { h = Synth( \discharge, [ \vol, 0] ); };
 }, '/start' );
 
 stop = OSCFunc( { | msg, time, addr, port |
@@ -67,33 +71,25 @@ stop = OSCFunc( { | msg, time, addr, port |
 
 
 
-
-
 //reader for gpp, sinoscillators
-h = Synth( \gppsound, [ \amp, 0.1 , \freq, 0.0] );
-
 x = OSCFunc( { | msg, time, addr, port |
 	var pyFreq;
 
 	pyFreq = msg[1].asFloat;
 	( "freq is " + pyFreq ).postln;
 	h.set( \freq, pyFreq );
-}, '/print' );
+}, '/gpp' );
 
-
-
-
-
-h = Synth( \discharge, [ \vol, 0] );
-
+//reader for discharge -- pinknoises
 x = OSCFunc( { | msg, time, addr, port |
 	var pyVol;
 
 	pyVol = msg[1].asFloat;
 	( "vol is " + pyVol ).postln;
 	h.set( \vol, pyVol );
-}, '/print' );
+}, '/discharge' );
 
+//reader for discharge -- thunder
 y = OSCFunc( { | msg, time, addr, port |
 	var trigger;
 
@@ -102,17 +98,11 @@ y = OSCFunc( { | msg, time, addr, port |
 		g = Synth(\thunder, [\bufnum, b.bufnum] );});
 }, '/thunder' );
 
-
-
-
-
-h = Synth( \dissolved_oxygen, [ \freq, 0] );
-
+//reader for dissolved oxygen
 x = OSCFunc( { | msg, time, addr, port |
 	var pyFreq;
 
 	pyFreq = msg[1].asFloat;
 	( "std dev is " + pyFreq ).postln;
 	h.set( \freq, pyFreq * 2000 + 1000 );
-}, '/print' );
-
+}, '/DO' );
