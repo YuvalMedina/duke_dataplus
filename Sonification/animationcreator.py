@@ -14,7 +14,7 @@ site = 'QS'
 start_date = dt.datetime.strptime('2017-01-01', '%Y-%m-%d')   #2017-01-01
 end_date = dt.datetime.strptime('2017-12-29', '%Y-%m-%d')   #2017-12-29
 
-doing_GPP = True    #whether or not we're plotting GPP or our variable
+doing_GPP = True    #whether or not we're plotting GPP or one of the other variables
 
 mygpp = pd.read_csv("all_daily_model_results.csv", sep=',', skiprows=[1], parse_dates=['year', 'solar_date'], dtype={'GPP':np.float64, 'GPP_lower':np.float64,
                                                                         'GPP_upper':np.float64, 'ER':np.float64, 'ER_lower':np.float64,
