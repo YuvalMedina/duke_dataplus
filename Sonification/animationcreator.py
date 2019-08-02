@@ -9,8 +9,8 @@ import datetime as dt
 from main_functions import readFile, getData, plotGraph
 
 gpppath = 'all_daily_model_results'
-region = 'PR'
-site = 'QS'
+region = 'WI'
+site = 'BRW'
 start_date = dt.datetime.strptime('2017-01-01', '%Y-%m-%d')   #2017-01-01
 end_date = dt.datetime.strptime('2017-12-29', '%Y-%m-%d')   #2017-12-29
 
@@ -87,4 +87,4 @@ def animate(i):
 ani = matplotlib.animation.FuncAnimation(fig, animate, frames=int(READINGS/FRAMESIZE),
                                interval=100, blit=False, repeat=True)
 
-ani.save('/Users/yuvalmedina/Music/SuperCollider Recordings/' + region + '_' + site + '_' + variable + '_animation.mp4', writer=writer)
+ani.save('mp4_files/' + region + '_' + site + '_' + variable + '_animation.mp4', writer=writer)
